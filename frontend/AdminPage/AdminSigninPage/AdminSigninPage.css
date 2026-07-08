@@ -96,6 +96,9 @@
 
   .field{margin-bottom:18px;}
   label{display:block;font-size:14px;font-weight:700;margin-bottom:10px;}
+  .label-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+  .label-row label{margin-bottom:0;}
+  .label-row span{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;}
   .input-row{display:flex;gap:8px;}
   .input-wrap{
     position:relative;
@@ -121,6 +124,8 @@
     font-size:15px;padding:14px 0;color:var(--text);font-family:inherit;
   }
   input::placeholder{color:#adb4c0;}
+  input:disabled{color:var(--muted);cursor:not-allowed;}
+  input[readonly]{color:var(--muted);}
   .eye-btn{background:none;border:none;cursor:pointer;color:var(--muted);display:flex;align-items:center;padding:4px;flex-shrink:0;}
   .eye-btn svg{width:19px;height:19px;}
 
@@ -132,6 +137,7 @@
   }
   .dup-btn:hover{background:#e9ebef;}
   .dup-btn.checked{background:var(--success-bg);border-color:var(--success);color:var(--success);}
+  .dup-btn:disabled{cursor:not-allowed;color:#a2aaba;background:#eef0f3;}
 
   .msg{font-size:12.5px;margin-top:8px;min-height:16px;font-weight:600;}
   .msg.error{color:var(--danger);}
@@ -158,6 +164,32 @@
     padding:11px 14px;margin-bottom:16px;display:none;
   }
   .top-error.show{display:block;}
+
+  .address-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .input-wrap.short{max-width:128px;}
+  .input-wrap.address{margin-top:0;}
+  .manual-note{font-size:12px;font-weight:600;color:var(--muted);}
+
+  .store-result{
+    display:none;margin-top:10px;border:1.5px solid var(--input-border);
+    background:#f8fafc;border-radius:14px;overflow:hidden;
+  }
+  .store-result.show{display:block;}
+  .store-choice{
+    width:100%;border:none;background:transparent;text-align:left;padding:13px 14px;
+    cursor:pointer;font-family:inherit;color:var(--text);border-bottom:1px solid var(--input-border);
+  }
+  .store-choice:last-child{border-bottom:none;}
+  .store-choice:hover{background:#fff;}
+  .store-choice b{display:block;font-size:13.5px;margin-bottom:4px;}
+  .store-choice span{display:block;font-size:12px;color:var(--muted);line-height:1.45;}
+  .selected-store{
+    margin-top:10px;border:1.5px solid #cfd8e3;background:#f8fafc;border-radius:14px;padding:13px 14px;
+  }
+  .selected-store .done{font-size:12px;font-weight:800;color:var(--success);margin-bottom:8px;}
+  .selected-store dl{display:grid;grid-template-columns:56px 1fr;gap:6px 10px;margin:0;font-size:12.5px;}
+  .selected-store dt{color:var(--muted);font-weight:700;}
+  .selected-store dd{margin:0;font-weight:700;color:var(--text);}
 
   .bottom-link{text-align:center;font-size:14px;color:var(--muted);margin-top:22px;}
   .bottom-link a{color:var(--navy);font-weight:800;text-decoration:none;margin-left:4px;}

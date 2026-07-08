@@ -5,17 +5,14 @@
  *    미리 넣어둔 고정 계정은 없습니다. (가입한 사용자만 로그인 가능)
  * =======================================================*/
 const APP_CONFIG = {
-  // 백엔드 API base URL. 배포된 백엔드 주소를 여기에 넣으면 가게/예약 API가 연결됩니다.
-  // 비어 있으면 백엔드 연동 기능(가게 목록/예약/길찾기)은 대기 상태가 됩니다.
-  API_BASE: '',
+  // 백엔드 API base URL. 배포 시 window.SAVEBITE_API_BASE 또는 이 값을 배포 주소로 바꾸면 됩니다.
+  API_BASE: window.SAVEBITE_API_BASE || 'http://localhost:3000',
   // 카카오 지도 JS 키 (Web 도메인 등록 기반 공개 키)
   KAKAO_JS_KEY: 'a0a57801dc63f8f29164150f16ade3b6',
   // 세션 저장 키
   SESSION_KEY: 'savebite_session',
   // 관리자 세션 저장 키 (사용자 세션과 분리)
   ADMIN_SESSION_KEY: 'savebite_admin_session',
-  // 사용자 계정 저장 키 (localStorage)
-  USERS_KEY: 'savebite_users',
   // 로그인 필요 여부 (로그인해야 메인/마이페이지 접근 가능)
   REQUIRE_LOGIN: true,
   // 길찾기(도보/차량) 노출 여부
@@ -65,37 +62,10 @@ const AdminSession = {
   }
 };
 
-/* ---------------- 사용자 계정 저장소 (localStorage) ----------------
- * 회원가입 시 등록되고 로그인 시 조회됩니다. 고정(하드코딩) 계정은 없습니다.
- */
-const UserStore = {
-  all() {
-    try { return JSON.parse(localStorage.getItem(APP_CONFIG.USERS_KEY)) || []; }
-    catch (e) { return []; }
-  },
-  find(email) {
-    const target = (email || '').trim().toLowerCase();
-    return this.all().find((u) => u.email.toLowerCase() === target) || null;
-  },
-  exists(email) { return !!this.find(email); },
-  add(user) {
-    const users = this.all();
-    users.push(user);
-    localStorage.setItem(APP_CONFIG.USERS_KEY, JSON.stringify(users));
-  }
-};
-
 /* ---------------- API 호출 헬퍼 (백엔드 연동 기능용) ----------------
- * 가게 목록/상세/예약/길찾기 등 백엔드가 필요한 기능에서 사용합니다.
- * API_BASE 가 비어 있으면 호출은 실패하고, 각 화면은 빈 상태/안내로 처리됩니다.
+ * 인증/가게 목록/예약/관리자 기능을 실제 백엔드로 연결합니다.
  */
 async function apiFetch(path, options = {}) {
-  // 백엔드 주소가 없으면 UI 확인용 샘플 데이터로 응답 (sample-data.js).
-  // API_BASE 를 채우면 이 분기는 건너뛰고 실제 백엔드로 요청합니다.
-  if (!APP_CONFIG.API_BASE && typeof SampleAPI !== 'undefined') {
-    return SampleAPI.handle(path, options);
-  }
-
   // 사용자 세션 토큰을 우선 사용하고, 없으면 관리자 세션 토큰을 첨부합니다.
   const session = Session.get() || (typeof AdminSession !== 'undefined' ? AdminSession.get() : null);
   const headers = Object.assign(

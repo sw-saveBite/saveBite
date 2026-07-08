@@ -47,23 +47,31 @@
     return '';
   }
 
-  function attemptLogin() {
+  async function attemptLogin() {
     const eErr = validateEmail();
     const pErr = validatePassword();
     setMsg(emailMsg, emailWrap, eErr);
     setMsg(pwMsg, pwWrap, pErr);
     if (eErr || pErr) return;
 
-    // 브라우저(localStorage)에 저장된 계정으로 인증
-    const user = UserStore.find(emailInput.value);
-    if (!user) { setBanner('error', '존재하지 않는 이메일입니다.'); return; }
-    if (user.password !== pwInput.value) { setBanner('error', '비밀번호가 틀렸습니다.'); return; }
-
-    Session.set({ token: 'session-' + Date.now(), email: user.email });
     loginBtn.disabled = true;
-    // 성공 메시지를 잠깐 보여준 뒤 메인 페이지로 이동
-    setBanner('success', '로그인에 성공하였습니다.');
-    setTimeout(() => { window.location.href = '../UserMainPage/UserMainPage.html'; }, 700);
+    loginBtn.textContent = '로그인 중...';
+    try {
+      const data = await apiFetch('/api/auth/user/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: emailInput.value.trim().toLowerCase(),
+          password: pwInput.value
+        })
+      });
+      Session.set({ token: data.token, email: emailInput.value.trim().toLowerCase() });
+      setBanner('success', data.message || '로그인에 성공하였습니다.');
+      setTimeout(() => { window.location.href = '../UserMainPage/UserMainPage.html'; }, 700);
+    } catch (err) {
+      setBanner('error', err.message || '로그인에 실패했습니다.');
+      loginBtn.disabled = false;
+      loginBtn.textContent = '로그인';
+    }
   }
 
   loginBtn.addEventListener('click', attemptLogin);

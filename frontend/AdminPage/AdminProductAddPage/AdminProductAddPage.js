@@ -111,16 +111,24 @@
     submitBtn.textContent = isEdit ? '수정 중...' : '추가 중...';
     try {
       const payload = JSON.stringify({
-        name: nameInput.value.trim(),
+        product_name: nameInput.value.trim(),
         price: parseInt(priceInput.value, 10),
-        total: parseInt(qtyInput.value, 10)
+        product_quantity: parseInt(qtyInput.value, 10)
       });
       if (isEdit) {
+<<<<<<< HEAD
         await apiFetch(`/api/admin/store/items/${editId}`, { method: 'PATCH', body: payload });
         alert('수정 성공하였습니다.');
       } else {
         await apiFetch('/api/admin/store/items', { method: 'POST', body: payload });
         alert('등록에 성공하였습니다.');
+=======
+        await apiFetch(`/api/admin/products/${editId}`, { method: 'PUT', body: payload });
+        alert('상품이 수정되었습니다.');
+      } else {
+        await apiFetch('/api/admin/products', { method: 'POST', body: payload });
+        alert('상품이 추가되었습니다.');
+>>>>>>> 8ee0774 (complete)
       }
       window.location.href = '../AdminDashboardPage/AdminDashboardPage.html';
     } catch (err) {

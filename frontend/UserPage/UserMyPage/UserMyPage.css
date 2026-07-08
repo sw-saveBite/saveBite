@@ -27,10 +27,13 @@ body{margin:0;font-family:'Noto Sans KR',sans-serif;color:var(--text);background
 .status.done{background:#e6f6ec;color:#1f8a4c;}
 .res-card h3{font-size:15px;font-weight:700;margin:0;}
 .res-card .date{font-size:12px;color:var(--placeholder);margin:4px 0 0;}
+.res-card .reason{font-size:12px;color:var(--danger);font-weight:700;margin:8px 0 0;}
 .actions{display:flex;gap:8px;flex-shrink:0;}
 .actions button{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;}
 .route-btn{background:var(--btn);color:#fff;}
 .route-btn:hover{background:var(--btn-hover);}
+.route-btn.walk{background:#1f8a4c;}
+.route-btn.walk:hover{background:#176b3a;}
 .cancel-btn{background:#fdeceb;color:var(--danger);}
 .cancel-btn:hover{background:#fbdedc;}
 .cancel-btn:disabled{background:#f1f3f5;color:var(--placeholder);cursor:not-allowed;}

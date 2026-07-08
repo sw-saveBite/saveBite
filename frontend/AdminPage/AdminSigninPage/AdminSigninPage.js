@@ -2,7 +2,8 @@
   // ---------- state ----------
   let emailChecked = false;
   let emailIsDuplicate = false;
-  const takenEmails = ['admin@test.com','user@store.com','test@test.com'];
+  let businessChecked = false;
+  let selectedStore = null;
 
   // ---------- elements ----------
   const emailInput = document.getElementById('email');
@@ -54,6 +55,20 @@
   const dotStep2 = document.getElementById('dotStep2');
   const lineStep = document.getElementById('lineStep');
 
+  const storeError = document.getElementById('storeError');
+  const businessInput = document.getElementById('businessNumber');
+  const businessWrap = document.getElementById('businessWrap');
+  const businessCheckBtn = document.getElementById('businessCheckBtn');
+  const businessMsg = document.getElementById('businessMsg');
+  const storeNameInput = document.getElementById('storeName');
+  const storeNameWrap = document.getElementById('storeNameWrap');
+  const storeNameMsg = document.getElementById('storeNameMsg');
+  const storeSearchBtn = document.getElementById('storeSearchBtn');
+  const storeResult = document.getElementById('storeResult');
+  const zipCodeInput = document.getElementById('zipCode');
+  const roadAddressInput = document.getElementById('roadAddress');
+  const detailAddressInput = document.getElementById('detailAddress');
+
   // ---------- helpers ----------
   const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
   function hasWhitespace(str){ return /\s/.test(str); }
@@ -75,7 +90,7 @@
     hideTopError();
   });
 
-  dupBtn.addEventListener('click', function(){
+  dupBtn.addEventListener('click', async function(){
     const val = emailInput.value;
     if(val.length === 0){
       setMsg(emailMsg, '이메일을 입력해 주세요.', 'error');
@@ -95,19 +110,28 @@
       resetDupCheck();
       return;
     }
-    const isDup = takenEmails.includes(val.trim().toLowerCase());
-    emailChecked = true;
-    emailIsDuplicate = isDup;
-    if(isDup){
-      setMsg(emailMsg, '이미 사용 중인 이메일입니다.', 'error');
-      setWrapState(emailWrap, 'error');
-      dupBtn.textContent = '중복 확인';
-      dupBtn.classList.remove('checked');
-    } else {
+    dupBtn.disabled = true;
+    dupBtn.textContent = '확인 중';
+    try {
+      await apiFetch('/api/auth/admin/check-email', {
+        method: 'POST',
+        body: JSON.stringify({ email: val.trim().toLowerCase() })
+      });
+      emailChecked = true;
+      emailIsDuplicate = false;
       setMsg(emailMsg, '사용 가능한 이메일입니다.', 'success');
       setWrapState(emailWrap, 'valid');
       dupBtn.textContent = '확인완료';
       dupBtn.classList.add('checked');
+    } catch (err) {
+      emailChecked = true;
+      emailIsDuplicate = err.status === 409;
+      setMsg(emailMsg, err.message || '이메일 중복 확인에 실패했습니다.', 'error');
+      setWrapState(emailWrap, 'error');
+      dupBtn.textContent = '중복 확인';
+      dupBtn.classList.remove('checked');
+    } finally {
+      dupBtn.disabled = false;
     }
   });
 
@@ -241,6 +265,199 @@
 
   document.getElementById('backBtn').addEventListener('click', function(){ goToStep(1); });
 
+  function formatBusinessNumber(value){
+    const digits = String(value || '').replace(/\D/g, '').slice(0, 10);
+    if(digits.length <= 3) return digits;
+    if(digits.length <= 5) return digits.slice(0, 3) + '-' + digits.slice(3);
+    return digits.slice(0, 3) + '-' + digits.slice(3, 5) + '-' + digits.slice(5);
+  }
+
+  businessInput.addEventListener('input', function(){
+    businessInput.value = formatBusinessNumber(businessInput.value);
+    businessChecked = false;
+    selectedStore = null;
+    storeNameInput.disabled = true;
+    storeSearchBtn.disabled = true;
+    storeNameInput.value = '';
+    zipCodeInput.value = '';
+    zipCodeInput.readOnly = true;
+    zipCodeInput.placeholder = '우편번호';
+    roadAddressInput.value = '';
+    storeResult.className = 'store-result';
+    storeResult.innerHTML = '';
+    setMsg(businessMsg, '');
+    setWrapState(businessWrap, '');
+    storeError.classList.remove('show');
+    businessCheckBtn.textContent = '인증';
+    businessCheckBtn.classList.remove('checked');
+  });
+
+  businessCheckBtn.addEventListener('click', async function(){
+    const businessNumber = businessInput.value.replace(/\D/g, '');
+    if(businessNumber.length !== 10){
+      setMsg(businessMsg, '사업자등록번호는 숫자 10자리로 입력해 주세요.', 'error');
+      setWrapState(businessWrap, 'error');
+      return;
+    }
+    businessCheckBtn.disabled = true;
+    businessCheckBtn.textContent = '조회 중';
+    try {
+      const data = await apiFetch('/api/public/business/status', {
+        method: 'POST',
+        body: JSON.stringify({ business_number: businessNumber })
+      });
+      if(!data.is_active){
+        throw new Error(data.message || '계속사업자가 아닙니다.');
+      }
+      businessChecked = true;
+      setMsg(businessMsg, '국세청 조회 완료 - 계속사업자 확인', 'success');
+      setWrapState(businessWrap, 'valid');
+      businessCheckBtn.textContent = '인증됨';
+      businessCheckBtn.classList.add('checked');
+      storeNameInput.disabled = false;
+      storeSearchBtn.disabled = false;
+      storeNameInput.focus();
+    } catch (err) {
+      businessChecked = false;
+      setMsg(businessMsg, err.message || '사업자등록번호 인증에 실패했습니다.', 'error');
+      setWrapState(businessWrap, 'error');
+      businessCheckBtn.textContent = '인증';
+      businessCheckBtn.classList.remove('checked');
+    } finally {
+      businessCheckBtn.disabled = false;
+    }
+  });
+
+  storeNameInput.addEventListener('input', function(){
+    selectedStore = null;
+    zipCodeInput.value = '';
+    zipCodeInput.readOnly = true;
+    zipCodeInput.placeholder = '우편번호';
+    roadAddressInput.value = '';
+    storeResult.className = 'store-result';
+    storeResult.innerHTML = '';
+    setMsg(storeNameMsg, '');
+    setWrapState(storeNameWrap, '');
+    storeError.classList.remove('show');
+  });
+
+  storeSearchBtn.addEventListener('click', async function(){
+    if(!businessChecked){
+      setMsg(storeNameMsg, '사업자등록번호 인증을 먼저 완료해 주세요.', 'error');
+      return;
+    }
+    const keyword = storeNameInput.value.trim();
+    if(!keyword){
+      setMsg(storeNameMsg, '상호명을 입력해 주세요.', 'error');
+      setWrapState(storeNameWrap, 'error');
+      return;
+    }
+    storeSearchBtn.disabled = true;
+    storeSearchBtn.textContent = '검색 중';
+    storeResult.className = 'store-result';
+    storeResult.innerHTML = '';
+    try {
+      const stores = await searchStores(keyword);
+      if(!stores.length){
+        setMsg(storeNameMsg, '검색 결과가 없습니다. 상호명을 다시 확인해 주세요.', 'error');
+        return;
+      }
+      storeResult.innerHTML = stores.map(function(store, index){
+        return `<button type="button" class="store-choice" data-index="${index}">
+          <b>${escapeHtml(store.store_name || '')}</b>
+          <span>${escapeHtml(store.road_address || store.lot_address || '주소 정보 없음')}</span>
+          <span>${escapeHtml(store.category || '')}</span>
+        </button>`;
+      }).join('');
+      storeResult.classList.add('show');
+      storeResult.querySelectorAll('.store-choice').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          chooseStore(stores[Number(btn.dataset.index)]);
+        });
+      });
+    } catch (err) {
+      setMsg(storeNameMsg, err.message || '상호명 검색에 실패했습니다.', 'error');
+      setWrapState(storeNameWrap, 'error');
+    } finally {
+      storeSearchBtn.disabled = false;
+      storeSearchBtn.textContent = '검색';
+    }
+  });
+
+  function chooseStore(store){
+    selectedStore = store;
+    storeNameInput.value = store.store_name || '';
+    zipCodeInput.value = store.zip_code || '';
+    zipCodeInput.readOnly = !!store.zip_code;
+    zipCodeInput.placeholder = store.zip_code ? '우편번호' : '우편번호 직접 입력';
+    roadAddressInput.value = store.road_address || store.lot_address || '';
+    setMsg(storeNameMsg, '상호명 등록 완료 - 주소가 자동 입력되었습니다.', 'success');
+    setWrapState(storeNameWrap, 'valid');
+    storeResult.innerHTML = `<div class="selected-store">
+      <div class="done">상호명 등록 완료</div>
+      <dl>
+        <dt>상호명</dt><dd>${escapeHtml(store.store_name || '')}</dd>
+        <dt>업종</dt><dd>${escapeHtml(store.category || '-')}</dd>
+      </dl>
+    </div>`;
+    storeResult.classList.add('show');
+  }
+
+  async function searchStores(keyword){
+    try {
+      const stores = await apiFetch(`/api/public/commercial-stores/search?keyword=${encodeURIComponent(keyword)}&numOfRows=8`);
+      if (Array.isArray(stores) && stores.length) return stores;
+    } catch (err) {
+      // 공공데이터 상호명 검색 엔드포인트가 막혀 있거나 키가 없으면 카카오 장소 검색으로 폴백합니다.
+    }
+    return searchKakaoPlaces(keyword);
+  }
+
+  async function searchKakaoPlaces(keyword){
+    await loadKakaoMaps();
+    return new Promise(function(resolve, reject){
+      const places = new window.kakao.maps.services.Places();
+      const geocoder = new window.kakao.maps.services.Geocoder();
+      places.keywordSearch(keyword, function(data, status){
+        if(status !== window.kakao.maps.services.Status.OK){
+          resolve([]);
+          return;
+        }
+        Promise.all(data.slice(0, 8).map(function(place){
+          const address = place.road_address_name || place.address_name || '';
+          return lookupZipCode(geocoder, address).then(function(zipCode){
+            return {
+              business_id: place.id,
+              store_name: place.place_name,
+              category: place.category_name || '',
+              zip_code: zipCode,
+              road_address: place.road_address_name || place.address_name || '',
+              lot_address: place.address_name || '',
+              latitude: Number(place.y),
+              longitude: Number(place.x)
+            };
+          });
+        })).then(resolve).catch(reject);
+      });
+    });
+  }
+
+  function lookupZipCode(geocoder, address){
+    return new Promise(function(resolve){
+      if(!address){
+        resolve('');
+        return;
+      }
+      geocoder.addressSearch(address, function(data, status){
+        if(status !== window.kakao.maps.services.Status.OK || !data.length){
+          resolve('');
+          return;
+        }
+        resolve((data[0].road_address && data[0].road_address.zone_no) || '');
+      });
+    });
+  }
+
   nextBtn.addEventListener('click', function(){
     const emailOk = emailValid();
     const pwOk = validatePassword(true);
@@ -265,6 +482,7 @@
 
   // 링크의 href="login.html"이 그대로 동작하므로 별도 이벤트 처리 불필요
 
+<<<<<<< HEAD
   /* ---------- STEP 2: 가게 정보 검증 ---------- */
   // 상호명 허용 문자: 한글/영문/숫자/공백 + 특수문자 ( ) [ ] - & 만
   const storeNameAllowed = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9()\[\]\-& ]*$/;
@@ -357,6 +575,65 @@
     successPanel.classList.add('active');
     dividerBottom.style.display = 'none';
     backToLoginLink.style.display = 'none';
+=======
+  document.getElementById('signupBtn').addEventListener('click', async function(){
+    storeError.classList.remove('show');
+    if(!businessChecked){
+      storeError.textContent = '사업자등록번호 인증을 완료해 주세요.';
+      storeError.classList.add('show');
+      return;
+    }
+    if(!selectedStore || !storeNameInput.value.trim() || !zipCodeInput.value || !roadAddressInput.value){
+      storeError.textContent = '상호명 검색 결과를 선택해 주소를 자동 입력해 주세요.';
+      storeError.classList.add('show');
+      return;
+    }
+    if(!Number.isFinite(Number(selectedStore.latitude)) || !Number.isFinite(Number(selectedStore.longitude))){
+      storeError.textContent = '선택한 상호명에 위치 정보가 없습니다. 다른 검색 결과를 선택해 주세요.';
+      storeError.classList.add('show');
+      return;
+    }
+    if(!detailAddressInput.value.trim()){
+      storeError.textContent = '상세 주소를 입력해 주세요.';
+      storeError.classList.add('show');
+      return;
+    }
+    if(detailAddressInput.value.length > 50){
+      storeError.textContent = '상세 주소는 50자 이내로 작성해 주세요.';
+      storeError.classList.add('show');
+      return;
+    }
+    const signupBtn = document.getElementById('signupBtn');
+    signupBtn.disabled = true;
+    signupBtn.textContent = '가입 중...';
+    try {
+      await apiFetch('/api/auth/admin/signup', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: emailInput.value.trim().toLowerCase(),
+          password: pwInput.value,
+          phone_number: phoneInput.value,
+          store_name: storeNameInput.value.trim(),
+          business_number: businessInput.value,
+          zip_code: zipCodeInput.value,
+          road_address: roadAddressInput.value,
+          detail_address: detailAddressInput.value.trim(),
+          latitude: selectedStore.latitude,
+          longitude: selectedStore.longitude
+        })
+      });
+      panelStep2.classList.remove('active');
+      stepsIndicator.style.display = 'none';
+      successPanel.classList.add('active');
+      dividerBottom.style.display = 'none';
+      backToLoginLink.style.display = 'none';
+    } catch (err) {
+      storeError.textContent = err.message || '회원가입에 실패했습니다.';
+      storeError.classList.add('show');
+      signupBtn.disabled = false;
+      signupBtn.textContent = '회원가입 완료';
+    }
+>>>>>>> 8ee0774 (complete)
   });
 
   updateSignupBtn(); // 초기: 비활성
@@ -365,5 +642,11 @@
     window.location.href = '../AdminLoginPage/AdminLoginPage.html';
   });
   // backToLoginLink는 href="login.html"이 그대로 동작하므로 별도 이벤트 처리 불필요
+
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
 
 })();

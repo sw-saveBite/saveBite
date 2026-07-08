@@ -1,9 +1,4 @@
 (function(){
-  // ---------- 테스트용 가짜 계정 DB ----------
-  const users = [
-    { email: 'admin@test.com', password: 'admin1234!' }
-  ];
-
   // ---------- elements ----------
   const emailInput = document.getElementById('email');
   const emailWrap = document.getElementById('emailWrap');
@@ -108,7 +103,7 @@
   }
 
   // ---------- 로그인 처리 ----------
-  function attemptLogin(){
+  async function attemptLogin(){
     hideTopMsgs();
 
     const emailOk = validateEmail();
@@ -117,29 +112,29 @@
 
     const emailVal = emailInput.value.trim().toLowerCase();
     const pwVal = pwInput.value;
+    loginBtn.disabled = true;
+    loginBtn.textContent = '로그인 중...';
 
-    const user = users.find(u => u.email.toLowerCase() === emailVal);
+    try {
+      const data = await apiFetch('/api/auth/admin/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: emailVal, password: pwVal })
+      });
 
-    if(!user){
-      showTopError('존재하지 않는 이메일입니다.');
-      setWrapState(emailWrap, 'error');
-      return;
+      setWrapState(emailWrap, 'valid');
+      setWrapState(pwWrap, 'valid');
+      showTopSuccess(data.message || '로그인에 성공하였습니다. 대시보드로 이동합니다.');
+      AdminSession.set({ token: data.token, email: emailVal });
+      setTimeout(function(){
+        window.location.href = '../AdminDashboardPage/AdminDashboardPage.html';
+      }, 600);
+    } catch (err) {
+      showTopError(err.message || '로그인에 실패했습니다.');
+      if (err.status === 404) setWrapState(emailWrap, 'error');
+      if (err.status === 401) setWrapState(pwWrap, 'error');
+      loginBtn.disabled = false;
+      loginBtn.textContent = '로그인';
     }
-    if(user.password !== pwVal){
-      showTopError('비밀번호가 틀렸습니다.');
-      setWrapState(pwWrap, 'error');
-      return;
-    }
-
-    setWrapState(emailWrap, 'valid');
-    setWrapState(pwWrap, 'valid');
-    showTopSuccess('로그인에 성공하였습니다. 대시보드로 이동합니다.');
-
-    // 관리자 세션 저장 후 대시보드로 이동 (config.js 의 AdminSession 사용)
-    AdminSession.set({ token: 'admin-' + Date.now(), email: emailVal });
-    setTimeout(function(){
-      window.location.href = '../AdminDashboardPage/AdminDashboardPage.html';
-    }, 600);
   }
 
   loginBtn.addEventListener('click', function(){

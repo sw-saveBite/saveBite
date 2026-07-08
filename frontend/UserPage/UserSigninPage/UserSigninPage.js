@@ -48,21 +48,33 @@
 
   emailInput.addEventListener('input', () => { resetDup(); setMsg(emailMsg, emailWrap, ''); setBanner('', ''); refreshBtn(); });
 
-  // 이메일 중복 확인 (localStorage 저장 계정 대상)
-  dupBtn.addEventListener('click', () => {
+  // 이메일 중복 확인 (백엔드)
+  dupBtn.addEventListener('click', async () => {
     const v = emailInput.value;
     if (!v) return setMsg(emailMsg, emailWrap, '이메일을 입력해 주세요.');
     if (hasWhitespace(v)) return setMsg(emailMsg, emailWrap, '이메일에 공백이 포함되어있습니다.');
     if (!emailRegex.test(v)) return setMsg(emailMsg, emailWrap, '올바른 이메일 형식이 아닙니다.');
 
-    emailChecked = true;
-    emailIsDuplicate = UserStore.exists(v);
-    if (emailIsDuplicate) {
-      setMsg(emailMsg, emailWrap, '이미 사용 중인 이메일입니다.');
-    } else {
+    dupBtn.disabled = true;
+    dupBtn.textContent = '확인 중';
+    try {
+      await apiFetch('/api/auth/user/check-email', {
+        method: 'POST',
+        body: JSON.stringify({ email: v.trim().toLowerCase() })
+      });
+      emailChecked = true;
+      emailIsDuplicate = false;
       setMsg(emailMsg, emailWrap, '사용 가능한 이메일입니다.', 'success');
       dupBtn.textContent = '확인완료';
       dupBtn.classList.add('checked');
+    } catch (err) {
+      emailChecked = true;
+      emailIsDuplicate = err.status === 409;
+      setMsg(emailMsg, emailWrap, err.message || '이메일 중복 확인에 실패했습니다.');
+      dupBtn.textContent = '중복 확인';
+      dupBtn.classList.remove('checked');
+    } finally {
+      dupBtn.disabled = false;
     }
     refreshBtn();
   });
@@ -132,21 +144,25 @@
       return setBanner('error', '필수항목을 모두 올바르게 입력해주세요.');
     }
 
-    // 가입 직전 중복 재확인 (다른 탭에서 먼저 가입했을 수 있으므로)
-    if (UserStore.exists(emailInput.value)) {
-      emailChecked = true;
-      emailIsDuplicate = true;
-      setMsg(emailMsg, emailWrap, '이미 사용 중인 이메일입니다.');
-      return setBanner('error', '이미 사용 중인 이메일입니다.');
+    signupBtn.disabled = true;
+    signupBtn.textContent = '가입 중...';
+    try {
+      await apiFetch('/api/auth/user/signup', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: emailInput.value.trim().toLowerCase(),
+          password: pwInput.value,
+          phone_number: phoneInput.value
+        })
+      });
+      alert('정상적으로 회원가입이 완료되었습니다.');
+      window.location.href = '../UserLoginPage/UserLoginPage.html';
+    } catch (err) {
+      setBanner('error', err.message || '회원가입에 실패했습니다.');
+      signupBtn.disabled = false;
+      signupBtn.textContent = '회원가입 완료';
+      refreshBtn();
     }
-
-    UserStore.add({
-      email: emailInput.value.trim(),
-      password: pwInput.value,
-      phone: phoneInput.value
-    });
-    alert('정상적으로 회원가입이 완료되었습니다.');
-    window.location.href = '../UserLoginPage/UserLoginPage.html';
   });
 
   refreshBtn(); // 초기 상태: 비활성 색

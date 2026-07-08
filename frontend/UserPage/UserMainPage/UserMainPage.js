@@ -31,6 +31,10 @@
 
   const params = new URLSearchParams(location.search);
   const routeStoreId = params.get('route');
+  const routeModeParam = params.get('mode');
+  if (routeModeParam === 'walk' || routeModeParam === 'car') {
+    routeMode = routeModeParam;
+  }
 
   const badgeClass = (status) => status === '영업 중' ? 'open' : status === '준비 중' ? 'prep' : 'closed';
 
@@ -97,12 +101,13 @@
   async function loadStores() {
     try {
       stores = myPos
-        ? await apiFetch(`/api/stores?lat=${myPos.lat}&lng=${myPos.lng}&radius=3`)
-        : await apiFetch('/api/stores?radius=3');
+        ? await apiFetch(`/api/user/stores?latitude=${myPos.lat}&longitude=${myPos.lng}`)
+        : [];
     } catch (e) {
       stores = [];
     }
     if (!Array.isArray(stores)) stores = [];
+    stores = stores.map(normalizeStore);
     renderList();
     addStoreMarkers();
   }
@@ -136,8 +141,6 @@
           <span class="badge ${badgeClass(s.status)}">${escapeHtml(s.status || '')}</span>
         </div>
         <p class="sc-row"><i class="ph ph-map-pin"></i> ${escapeHtml(s.address || '')}</p>
-        <p class="sc-row"><i class="ph ph-clock"></i> ${escapeHtml(s.hours || '')}</p>
-        <p class="sc-row"><i class="ph ph-phone"></i> ${escapeHtml(s.phone || '')}</p>
         <div class="sc-bottom">
           <span class="sc-dist">${s.distanceKm != null ? s.distanceKm + 'km' : ''}</span>
           <span class="sc-link">상품 보기 <i class="ph ph-caret-right"></i></span>
@@ -151,7 +154,11 @@
 
   // ---------- 상세(상품) 렌더 ----------
   async function openStore(id) {
-    try { selectedStore = await apiFetch(`/api/stores/${id}`); }
+    try {
+      const base = stores.find((s) => Number(s.id) === Number(id));
+      const products = await apiFetch(`/api/user/stores/${id}/products`);
+      selectedStore = Object.assign({}, base || { id }, { items: (products || []).map(normalizeProduct) });
+    }
     catch (e) { selectedStore = stores.find((s) => s.id === Number(id)) || null; }
     if (!selectedStore) return;
     renderDetail();
@@ -190,32 +197,12 @@
           <span class="badge ${badgeClass(s.status)}">${escapeHtml(s.status || '')}</span>
         </div>
         <p class="sc-row"><i class="ph ph-map-pin"></i> ${escapeHtml(s.address || '')}</p>
-        <p class="sc-row"><i class="ph ph-clock"></i> ${escapeHtml(s.hours || '')}</p>
-        <p class="sc-row"><i class="ph ph-phone"></i> ${escapeHtml(s.phone || '')}</p>
-        ${APP_CONFIG.SHOW_DIRECTIONS ? `
-        <div class="route-box">
-          <div class="mode-toggle" id="modeToggle">
-            <button type="button" data-mode="car" class="${routeMode === 'car' ? 'active' : ''}"><i class="ph ph-car"></i> 차량</button>
-            <button type="button" data-mode="walk" class="${routeMode === 'walk' ? 'active' : ''}"><i class="ph ph-person-simple-walk"></i> 도보</button>
-          </div>
-          <button class="route-btn" id="routeFromDetail"><i class="ph ph-navigation-arrow"></i> 길찾기</button>
-        </div>` : ''}
       </div>
       <h4 class="section-title">상품 목록</h4>
       ${itemsHtml}
     `;
 
     document.getElementById('backToList').addEventListener('click', renderList);
-    if (APP_CONFIG.SHOW_DIRECTIONS) {
-      document.getElementById('routeFromDetail').addEventListener('click', () => openRoute(s.id, routeMode));
-      listArea.querySelectorAll('#modeToggle button').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          routeMode = btn.dataset.mode;
-          listArea.querySelectorAll('#modeToggle button').forEach((b) => b.classList.toggle('active', b === btn));
-          if (lastRouteStoreId === s.id) openRoute(s.id, routeMode);
-        });
-      });
-    }
     listArea.querySelectorAll('.p-reserve').forEach((btn) => {
       btn.addEventListener('click', () => {
         const item = items.find((it) => String(it.id) === btn.dataset.id);
@@ -245,9 +232,9 @@
     reserveCancel.disabled = true;
     reserveConfirm.textContent = '처리 중...';
     try {
-      await apiFetch('/api/reservations', {
+      await apiFetch('/api/user/reservations', {
         method: 'POST',
-        body: JSON.stringify({ storeId: selectedStore.id, itemId: pendingItem.id })
+        body: JSON.stringify({ product_id: pendingItem.id })
       });
       alert('예약이 성공적으로 완료되었습니다.');
       closeModal();
@@ -271,15 +258,19 @@
   // ---------- 긴급품절 안내 ----------
   async function loadEmergency() {
     let reservations = [];
-    try { reservations = await apiFetch('/api/reservations'); } catch (e) { return; }
-    // 긴급 품절로 일괄 취소된 예약 안내가 우선, 없으면 활성 예약 중 품절 상품 안내
-    const canceled = (reservations || []).find((r) => r.status === '취소됨' && r.canceledBySoldOut);
-    const soldOut = (reservations || []).find((r) => (r.status === '예약 대기' || r.status === '예약 확정') && r.itemSoldOut);
+    try { reservations = await apiFetch('/api/user/reservations'); } catch (e) { return; }
+    const canceled = (reservations || []).find((r) => {
+      const reason = r.cancel_reason || r.cancle_reason || '';
+      return r.status === '예약취소' && /긴급|품절/.test(reason);
+    });
+    const soldOut = (reservations || []).find((r) => {
+      return (r.status === '예약대기' || r.status === '예약확정') && r.itemSoldOut;
+    });
     if (canceled) {
-      emergencyText.innerHTML = `<i class="ph ph-warning-circle"></i> 예약하신 <strong>${escapeHtml(canceled.itemName)}</strong> 상품이 긴급 품절되어 예약이 취소되었습니다. 마이페이지에서 확인해 주세요.`;
+      emergencyText.innerHTML = `<i class="ph ph-warning-circle"></i> 예약하신 <strong>${escapeHtml(canceled.product_name || '상품')}</strong> 상품이 긴급 품절되어 예약이 취소되었습니다. 마이페이지에서 확인해 주세요.`;
       emergency.classList.remove('hidden');
     } else if (soldOut) {
-      emergencyText.innerHTML = `<i class="ph ph-warning-circle"></i> 예약하신 <strong>${escapeHtml(soldOut.itemName)}</strong> 상품이 품절되었습니다. 마이페이지에서 확인해 주세요.`;
+      emergencyText.innerHTML = `<i class="ph ph-warning-circle"></i> 예약하신 <strong>${escapeHtml(soldOut.product_name || '상품')}</strong> 상품이 품절되었습니다. 마이페이지에서 확인해 주세요.`;
       emergency.classList.remove('hidden');
     }
   }
@@ -290,7 +281,10 @@
   async function openRoute(id, mode) {
     routeMode = mode || routeMode || 'car';
     let target;
-    try { target = await apiFetch(`/api/stores/${id}`); }
+      try {
+        const base = stores.find((s) => Number(s.id) === Number(id));
+        target = base || null;
+      }
     catch (e) { target = stores.find((s) => s.id === Number(id)); }
     if (!target || !target.lat || !target.lng) { alert('가게 위치 정보가 등록되지 않았습니다.'); return; }
     if (!myPos) { alert('현재 위치를 확인할 수 없습니다. 위치 권한을 허용한 뒤 다시 시도해 주세요.'); return; }
@@ -300,14 +294,7 @@
     const destination = `${target.lng},${target.lat}`;
     try {
       let data = null;
-      // 도보: TMap 보행자 API 직접 호출 (백엔드 미연동 + appKey 가 있을 때). 실패 시 아래 폴백 사용.
-      if (routeMode === 'walk' && !APP_CONFIG.API_BASE && APP_CONFIG.TMAP_APP_KEY) {
-        try { data = await fetchTmapWalkRoute(origin, destination); }
-        catch (e) { data = null; }
-      }
-      if (!data) {
-        data = await apiFetch(`/api/directions?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=${routeMode}`);
-      }
+      data = await apiFetch(`/api/directions?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=${routeMode}`);
       if (!data || !Array.isArray(data.path) || data.path.length < 2) {
         alert('경로를 찾을 수 없습니다.');
         openStore(id);
@@ -317,7 +304,9 @@
       drawRoute(data, target, routeMode);
       openStore(id);
     } catch (err) {
-      alert('길찾기 정보를 불러오지 못했습니다.');
+      alert(routeMode === 'walk'
+        ? '도보 길찾기 정보를 불러오지 못했습니다. TMap 키 권한을 확인해 주세요.'
+        : (err.message || '길찾기 정보를 불러오지 못했습니다.'));
       openStore(id);
     }
   }
@@ -348,11 +337,10 @@
   function showRouteInfo(mode, distanceM, durationSec) {
     const el = document.getElementById('routeInfo');
     if (!el) return;
-    const icon = mode === 'walk' ? 'ph-person-simple-walk' : 'ph-car';
-    const label = mode === 'walk' ? '도보' : '차량';
-    const parts = [`<i class="ph ${icon}"></i> ${label}`];
+    const parts = [];
     if (distanceM != null) parts.push((distanceM / 1000).toFixed(1) + 'km');
     if (durationSec != null) parts.push('약 ' + Math.max(1, Math.round(durationSec / 60)) + '분');
+    if (!parts.length) return;
     el.innerHTML = parts.join(' · ');
     el.classList.remove('hidden');
   }
@@ -367,6 +355,33 @@
     return String(str == null ? '' : str)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function normalizeStore(store) {
+    return {
+      id: store.store_id,
+      name: store.store_name,
+      address: store.road_address || '',
+      status: store.status === '영업중' ? '영업 중' : (store.status || ''),
+      lat: store.latitude == null ? null : Number(store.latitude),
+      lng: store.longitude == null ? null : Number(store.longitude),
+      distanceKm: store.distance_km,
+      hours: store.hours || '',
+      phone: store.phone_number || ''
+    };
+  }
+
+  function normalizeProduct(product) {
+    const total = Number(product.quantity) || 0;
+    const reserved = Number(product.count_quantity) || 0;
+    return {
+      id: product.product_id,
+      name: product.product_name,
+      price: `${Number(product.price || 0).toLocaleString('ko-KR')}원`,
+      total,
+      stock: Math.max(total - reserved, 0),
+      status: product.status
+    };
   }
 
   init();

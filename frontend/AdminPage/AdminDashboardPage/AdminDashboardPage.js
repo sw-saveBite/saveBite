@@ -31,6 +31,10 @@
   let openMenuId = null;
   let soldoutTarget = null;
   let deleteTarget = null;
+<<<<<<< HEAD
+=======
+  const ACTIVE_RESERVATION_STATUSES = ['예약대기', '예약확정', '준비중', '준비완료'];
+>>>>>>> 8ee0774 (complete)
 
   // ---------- 초기화 ----------
   async function init() {
@@ -49,8 +53,8 @@
   function renderStoreHead() {
     storeName.textContent = store.name || '가게';
     storeAddress.textContent = store.address || '';
-    const open = store.status === '영업 중';
-    openText.textContent = store.status || '';
+    const open = store.status === '영업중' || store.status === '영업 중';
+    openText.textContent = store.status === '영업중' ? '영업 중' : (store.status || '');
     openFlag.classList.toggle('closed', !open);
   }
 
@@ -112,10 +116,11 @@
       <button data-act="delete" class="danger"><i class="ph ph-trash"></i> 삭제</button>`
       : `
       <button data-act="reservers"><i class="ph ph-users"></i> 예약자 확인</button>
-      <button data-act="edit"><i class="ph ph-pencil-simple"></i> 수정</button>
-      <button data-act="soldout" class="warn"><i class="ph ph-warning"></i> 긴급 품절</button>`;
+      ${soldOut ? '' : '<button data-act="edit"><i class="ph ph-pencil-simple"></i> 수정</button>'}
+      ${soldOut ? '<button data-act="delete" class="danger"><i class="ph ph-trash"></i> 삭제</button>' : '<button data-act="soldout" class="warn"><i class="ph ph-warning"></i> 긴급 품절</button>'}`;
     card.appendChild(pop);
     pop.querySelector('[data-act="reservers"]').addEventListener('click', (e) => { e.stopPropagation(); openReservers(item); });
+<<<<<<< HEAD
     const editBtn = pop.querySelector('[data-act="edit"]');
     if (editBtn) editBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -125,6 +130,23 @@
     if (soldoutBtn) soldoutBtn.addEventListener('click', (e) => { e.stopPropagation(); openSoldout(item); });
     const deleteBtn = pop.querySelector('[data-act="delete"]');
     if (deleteBtn) deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); openDelete(item); });
+=======
+    const editButton = pop.querySelector('[data-act="edit"]');
+    if (editButton) {
+      editButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        window.location.href = `../AdminProductAddPage/AdminProductAddPage.html?id=${item.id}`;
+      });
+    }
+    const soldoutButton = pop.querySelector('[data-act="soldout"]');
+    if (soldoutButton) {
+      soldoutButton.addEventListener('click', (e) => { e.stopPropagation(); openSoldout(item); });
+    }
+    const deleteButton = pop.querySelector('[data-act="delete"]');
+    if (deleteButton) {
+      deleteButton.addEventListener('click', (e) => { e.stopPropagation(); openDelete(item); });
+    }
+>>>>>>> 8ee0774 (complete)
   }
 
   function closeMenu() {
@@ -141,15 +163,16 @@
     reserverList.innerHTML = '<p class="empty">불러오는 중...</p>';
     reserversModal.classList.remove('hidden');
     try {
-      const list = await apiFetch(`/api/admin/store/items/${item.id}/reservations`);
+      const all = await apiFetch('/api/admin/reservations');
+      const list = (all || []).filter((r) => Number(r.product_id) === Number(item.id) && isActiveReservation(r));
       reserverList.innerHTML = (list && list.length)
         ? list.map((r) => `
             <div class="reserver-row">
               <div>
-                <b>${escapeHtml(r.name)}</b>
-                <p>${escapeHtml(r.phone || '-')}</p>
+                <b>${escapeHtml(formatPhone(r.user_phone) || '연락처 없음')}</b>
+                <p>${escapeHtml(r.status || '-')}</p>
               </div>
-              ${r.pickupTime ? `<span class="time-chip">${escapeHtml(r.pickupTime)}</span>` : ''}
+              ${r.create_at ? `<span class="time-chip">${escapeHtml(new Date(r.create_at).toLocaleString('ko-KR'))}</span>` : ''}
             </div>`).join('')
         : '<p class="empty">아직 예약자가 없습니다.</p>';
     } catch (e) {
@@ -165,7 +188,10 @@
     soldoutTarget = item;
     soldoutItemName.textContent = item.name;
     let count = 0;
-    try { count = ((await apiFetch(`/api/admin/store/items/${item.id}/reservations`)) || []).length; }
+    try {
+      const all = await apiFetch('/api/admin/reservations');
+      count = ((all || []).filter((r) => Number(r.product_id) === Number(item.id) && isActiveReservation(r))).length;
+    }
     catch (e) { /* 예약자 수 조회 실패 시 0명으로 표시 */ }
     soldoutText.innerHTML = `현재 <b>${count}명</b>의 예약자가 있습니다. 긴급 품절 시 예약은 일괄 취소되며 안내 메시지가 발송됩니다. 진행하시겠습니까?`;
     soldoutConfirm.disabled = false;
@@ -181,8 +207,16 @@
     if (!soldoutTarget) return;
     soldoutConfirm.disabled = true;
     try {
+<<<<<<< HEAD
       await apiFetch(`/api/admin/store/items/${soldoutTarget.id}/soldout`, { method: 'POST' });
       alert('긴급 품절 처리되었으며, 예약자에게 취소 안내가 발송되었습니다.');
+=======
+      await apiFetch(`/api/admin/products/${soldoutTarget.id}/emergency-soldout`, {
+        method: 'PATCH',
+        body: JSON.stringify({ cancel_reason: '관리자 긴급 품절 처리' })
+      });
+      alert('긴급 품절 처리되었습니다.');
+>>>>>>> 8ee0774 (complete)
       closeSoldout();
       await refresh();
     } catch (e) {
@@ -191,7 +225,11 @@
     }
   });
 
+<<<<<<< HEAD
   // ---------- 상품 삭제 모달 (품절 상품만) ----------
+=======
+  // ---------- 품절 상품 삭제 ----------
+>>>>>>> 8ee0774 (complete)
   function openDelete(item) {
     closeMenu();
     deleteTarget = item;
@@ -209,6 +247,7 @@
     if (!deleteTarget) return;
     deleteConfirm.disabled = true;
     try {
+<<<<<<< HEAD
       await apiFetch(`/api/admin/store/items/${deleteTarget.id}`, { method: 'DELETE' });
       alert('상품이 삭제되었습니다.');
       closeDelete();
@@ -217,6 +256,15 @@
       // 예약 존재/판매중 등 삭제 불가 사유 안내
       alert(e.message || '상품 삭제 중 오류가 발생했습니다.');
       closeDelete();
+=======
+      await apiFetch(`/api/admin/products/${deleteTarget.id}`, { method: 'DELETE' });
+      alert('상품이 리스트에서 삭제되었습니다.');
+      closeDelete();
+      await refresh();
+    } catch (e) {
+      alert(e.message || '상품 삭제 중 오류가 발생했습니다.');
+      deleteConfirm.disabled = false;
+>>>>>>> 8ee0774 (complete)
     }
   });
 
@@ -283,6 +331,17 @@
     return String(str == null ? '' : str)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function isActiveReservation(reservation) {
+    return ACTIVE_RESERVATION_STATUSES.includes(reservation.status);
+  }
+
+  function formatPhone(value) {
+    const digits = String(value || '').replace(/\D/g, '');
+    if (digits.length === 11) return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+    if (digits.length === 10) return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+    return value || '';
   }
 
   init();

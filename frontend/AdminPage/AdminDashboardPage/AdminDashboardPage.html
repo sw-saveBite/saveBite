@@ -110,9 +110,26 @@
       </div>
     </div>
   </div>
+
+  <!-- 상품 삭제 확인 모달 -->
+  <div class="modal-overlay hidden" id="deleteModal">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-ic danger"><i class="ph ph-trash"></i></div>
+        <div class="modal-titles">
+          <h3>상품 삭제</h3>
+          <p id="deleteItemName"></p>
+        </div>
+      </div>
+      <p class="soldout-text">정말 이 상품을 리스트에서 삭제하시겠습니까?</p>
+      <div class="modal-btns">
+        <button type="button" class="m-cancel" id="deleteCancel">취소</button>
+        <button type="button" class="m-danger" id="deleteConfirm">삭제</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<script src="../../UserPage/sample-data.js"></script>
 <script src="../../UserPage/config.js"></script>
 <script src="AdminDashboardPage.js"></script>
 </body>
