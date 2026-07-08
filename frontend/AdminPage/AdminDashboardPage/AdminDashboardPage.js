@@ -23,10 +23,14 @@
   const soldoutItemName = document.getElementById('soldoutItemName');
   const soldoutText = document.getElementById('soldoutText');
   const soldoutConfirm = document.getElementById('soldoutConfirm');
+  const deleteModal = document.getElementById('deleteModal');
+  const deleteItemName = document.getElementById('deleteItemName');
+  const deleteConfirm = document.getElementById('deleteConfirm');
 
   let store = null;
   let openMenuId = null;
   let soldoutTarget = null;
+  let deleteTarget = null;
 
   // ---------- 초기화 ----------
   async function init() {
@@ -88,7 +92,9 @@
     });
   }
 
-  // ---------- ⋮ 메뉴 (예약자 확인 / 수정 / 긴급 품절) ----------
+  // ---------- ⋮ 메뉴 (상태별로 항목이 달라짐) ----------
+  //  판매중: 예약자 확인 · 수정 · 긴급 품절
+  //  품절  : 예약자 확인 · 삭제
   function toggleMenu(id) {
     if (openMenuId === id) { closeMenu(); return; }
     closeMenu();
@@ -97,19 +103,28 @@
     if (!card) return;
     const item = (store.items || []).find((i) => i.id === id);
     if (!item) return;
+    const { soldOut } = itemStats(item);
     const pop = document.createElement('div');
     pop.className = 'menu-pop';
-    pop.innerHTML = `
+    pop.innerHTML = soldOut
+      ? `
+      <button data-act="reservers"><i class="ph ph-users"></i> 예약자 확인</button>
+      <button data-act="delete" class="danger"><i class="ph ph-trash"></i> 삭제</button>`
+      : `
       <button data-act="reservers"><i class="ph ph-users"></i> 예약자 확인</button>
       <button data-act="edit"><i class="ph ph-pencil-simple"></i> 수정</button>
       <button data-act="soldout" class="warn"><i class="ph ph-warning"></i> 긴급 품절</button>`;
     card.appendChild(pop);
     pop.querySelector('[data-act="reservers"]').addEventListener('click', (e) => { e.stopPropagation(); openReservers(item); });
-    pop.querySelector('[data-act="edit"]').addEventListener('click', (e) => {
+    const editBtn = pop.querySelector('[data-act="edit"]');
+    if (editBtn) editBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       window.location.href = `../AdminProductAddPage/AdminProductAddPage.html?id=${item.id}`;
     });
-    pop.querySelector('[data-act="soldout"]').addEventListener('click', (e) => { e.stopPropagation(); openSoldout(item); });
+    const soldoutBtn = pop.querySelector('[data-act="soldout"]');
+    if (soldoutBtn) soldoutBtn.addEventListener('click', (e) => { e.stopPropagation(); openSoldout(item); });
+    const deleteBtn = pop.querySelector('[data-act="delete"]');
+    if (deleteBtn) deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); openDelete(item); });
   }
 
   function closeMenu() {
@@ -166,13 +181,42 @@
     if (!soldoutTarget) return;
     soldoutConfirm.disabled = true;
     try {
-      const res = await apiFetch(`/api/admin/store/items/${soldoutTarget.id}/soldout`, { method: 'POST' });
-      alert(`품절 처리되었습니다. (예약 ${res && res.canceledCount != null ? res.canceledCount : 0}건 취소)`);
+      await apiFetch(`/api/admin/store/items/${soldoutTarget.id}/soldout`, { method: 'POST' });
+      alert('긴급 품절 처리되었으며, 예약자에게 취소 안내가 발송되었습니다.');
       closeSoldout();
       await refresh();
     } catch (e) {
       alert(e.message || '품절 처리 중 오류가 발생했습니다.');
       soldoutConfirm.disabled = false;
+    }
+  });
+
+  // ---------- 상품 삭제 모달 (품절 상품만) ----------
+  function openDelete(item) {
+    closeMenu();
+    deleteTarget = item;
+    deleteItemName.textContent = item.name;
+    deleteConfirm.disabled = false;
+    deleteModal.classList.remove('hidden');
+  }
+  document.getElementById('deleteCancel').addEventListener('click', closeDelete);
+  deleteModal.addEventListener('click', (e) => { if (e.target === deleteModal) closeDelete(); });
+  function closeDelete() {
+    deleteModal.classList.add('hidden');
+    deleteTarget = null;
+  }
+  deleteConfirm.addEventListener('click', async () => {
+    if (!deleteTarget) return;
+    deleteConfirm.disabled = true;
+    try {
+      await apiFetch(`/api/admin/store/items/${deleteTarget.id}`, { method: 'DELETE' });
+      alert('상품이 삭제되었습니다.');
+      closeDelete();
+      await refresh();
+    } catch (e) {
+      // 예약 존재/판매중 등 삭제 불가 사유 안내
+      alert(e.message || '상품 삭제 중 오류가 발생했습니다.');
+      closeDelete();
     }
   });
 

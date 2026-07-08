@@ -28,6 +28,21 @@
   const nextBtn = document.getElementById('nextBtn');
   const topError = document.getElementById('topError');
 
+  // Step 2 (가게 정보)
+  const storeNameInput = document.getElementById('storeName');
+  const storeNameWrap = document.getElementById('storeNameWrap');
+  const storeNameMsg = document.getElementById('storeNameMsg');
+  const zipcodeInput = document.getElementById('zipcode');
+  const addressInput = document.getElementById('address');
+  const addrWrap = document.getElementById('addrWrap');
+  const addrMsg = document.getElementById('addrMsg');
+  const addrDetailInput = document.getElementById('addressDetail');
+  const addrDetailWrap = document.getElementById('addrDetailWrap');
+  const addrDetailMsg = document.getElementById('addrDetailMsg');
+  const addrSearchBtn = document.getElementById('addrSearchBtn');
+  const signupBtn = document.getElementById('signupBtn');
+  const topError2 = document.getElementById('topError2');
+
   const panelStep1 = document.getElementById('panelStep1');
   const panelStep2 = document.getElementById('panelStep2');
   const successPanel = document.getElementById('successPanel');
@@ -250,13 +265,101 @@
 
   // 링크의 href="login.html"이 그대로 동작하므로 별도 이벤트 처리 불필요
 
+  /* ---------- STEP 2: 가게 정보 검증 ---------- */
+  // 상호명 허용 문자: 한글/영문/숫자/공백 + 특수문자 ( ) [ ] - & 만
+  const storeNameAllowed = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9()\[\]\-& ]*$/;
+
+  function validateStoreName(showMsg){
+    const val = storeNameInput.value;
+    const trimmed = val.trim();
+    if(trimmed.length === 0){
+      if(showMsg){ setMsg(storeNameMsg, '상호명을 입력해 주세요.', 'error'); setWrapState(storeNameWrap,'error'); }
+      return false;
+    }
+    if(!storeNameAllowed.test(val)){
+      if(showMsg){ setMsg(storeNameMsg, '상호명에 사용할 수 없는 특수문자가 포함되어 있습니다.', 'error'); setWrapState(storeNameWrap,'error'); }
+      return false;
+    }
+    if(showMsg){ setMsg(storeNameMsg, '', ''); setWrapState(storeNameWrap,'valid'); }
+    return true;
+  }
+
+  function validateAddress(showMsg){
+    const ok = zipcodeInput.value.trim().length > 0 && addressInput.value.trim().length > 0;
+    if(!ok){
+      if(showMsg){ setMsg(addrMsg, '가게 주소를 등록해 주세요.', 'error'); setWrapState(addrWrap,'error'); }
+      return false;
+    }
+    if(showMsg){ setMsg(addrMsg, '', ''); setWrapState(addrWrap,'valid'); }
+    return true;
+  }
+
+  function validateAddrDetail(showMsg){
+    const val = addrDetailInput.value;
+    if(val.length > 50){
+      if(showMsg){ setMsg(addrDetailMsg, '상세 주소는 50자 이내로 작성해 주세요.', 'error'); setWrapState(addrDetailWrap,'error'); }
+      return false;
+    }
+    if(val.trim().length === 0){
+      if(showMsg){ setMsg(addrDetailMsg, '상세 주소를 정확히 입력해 주세요. (공백만 입력 불가)', 'error'); setWrapState(addrDetailWrap,'error'); }
+      return false;
+    }
+    if(showMsg){ setMsg(addrDetailMsg, '', ''); setWrapState(addrDetailWrap,'valid'); }
+    return true;
+  }
+
+  function updateSignupBtn(){
+    const ok = validateStoreName(false) && validateAddress(false) && validateAddrDetail(false);
+    signupBtn.classList.toggle('enabled', ok);
+  }
+
+  storeNameInput.addEventListener('input', function(){
+    setWrapState(storeNameWrap, ''); setMsg(storeNameMsg, '', '');
+    topError2.classList.remove('show');
+    updateSignupBtn();
+  });
+  addrDetailInput.addEventListener('input', function(){
+    setWrapState(addrDetailWrap, ''); setMsg(addrDetailMsg, '', '');
+    topError2.classList.remove('show');
+    updateSignupBtn();
+  });
+
+  // 주소 검색 (다음/카카오 우편번호 팝업)
+  addrSearchBtn.addEventListener('click', function(){
+    if(typeof daum === 'undefined' || !daum.Postcode){
+      setMsg(addrMsg, '주소 검색 서비스를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.', 'error');
+      setWrapState(addrWrap, 'error');
+      return;
+    }
+    new daum.Postcode({
+      oncomplete: function(data){
+        zipcodeInput.value = data.zonecode || '';
+        addressInput.value = data.roadAddress || data.jibunAddress || '';
+        setMsg(addrMsg, '', ''); setWrapState(addrWrap, 'valid');
+        topError2.classList.remove('show');
+        updateSignupBtn();
+        addrDetailInput.focus();
+      }
+    }).open();
+  });
+
   document.getElementById('signupBtn').addEventListener('click', function(){
+    const okName = validateStoreName(true);
+    const okAddr = validateAddress(true);
+    const okDetail = validateAddrDetail(true);
+    if(!okName || !okAddr || !okDetail){
+      topError2.classList.add('show');
+      return;
+    }
+    topError2.classList.remove('show');
     panelStep2.classList.remove('active');
     stepsIndicator.style.display = 'none';
     successPanel.classList.add('active');
     dividerBottom.style.display = 'none';
     backToLoginLink.style.display = 'none';
   });
+
+  updateSignupBtn(); // 초기: 비활성
 
   document.getElementById('goLoginBtn').addEventListener('click', function(){
     window.location.href = '../AdminLoginPage/AdminLoginPage.html';

@@ -33,6 +33,12 @@
       const store = await apiFetch('/api/admin/store');
       const item = (store.items || []).find((i) => String(i.id) === editId);
       if (!item) throw new Error('존재하지 않는 상품입니다.');
+      // 품절 상품은 수정 불가 (명세)
+      if (item.stock <= 0) {
+        alert('품절 상품이라 수정할 수 없습니다.');
+        window.location.href = '../AdminDashboardPage/AdminDashboardPage.html';
+        return;
+      }
       document.getElementById('pageSub').textContent = item.name;
       nameInput.value = item.name;
       nameCount.textContent = item.name.length;
@@ -96,8 +102,8 @@
     if (submitting) return;
     if (!isValid()) {
       if (nameInput.value.trim().length === 0) { nameWrap.classList.add('error'); showError('상품 이름을 입력해 주세요.'); return; }
-      if (priceInput.value.length === 0) { priceWrap.classList.add('error'); showError('판매 가격을 입력해 주세요.'); return; }
-      qtyWrap.classList.add('error'); showError('예약 가능 수량은 1개 이상이어야 합니다.');
+      if (priceInput.value.length === 0) { priceWrap.classList.add('error'); showError('상품 가격을 입력해 주세요.'); return; }
+      qtyWrap.classList.add('error'); showError('상품 수량을 선택해 주세요.');
       return;
     }
     submitting = true;
@@ -111,17 +117,18 @@
       });
       if (isEdit) {
         await apiFetch(`/api/admin/store/items/${editId}`, { method: 'PATCH', body: payload });
-        alert('상품이 수정되었습니다.');
+        alert('수정 성공하였습니다.');
       } else {
         await apiFetch('/api/admin/store/items', { method: 'POST', body: payload });
-        alert('상품이 추가되었습니다.');
+        alert('등록에 성공하였습니다.');
       }
       window.location.href = '../AdminDashboardPage/AdminDashboardPage.html';
     } catch (err) {
       submitting = false;
       submitBtn.textContent = isEdit ? '수정 완료' : '상품 추가';
       updateBtn();
-      showError(err.message || (isEdit ? '상품 수정 중 오류가 발생했습니다.' : '상품 추가 중 오류가 발생했습니다.'));
+      // 구체적 사유(예: 예약 수량 부족)가 있으면 우선 표시, 없으면 명세 문구
+      showError(err.message || (isEdit ? '수정 실패하였습니다.' : '등록에 실패하였습니다.'));
     }
   }
 

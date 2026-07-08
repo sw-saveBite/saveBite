@@ -242,13 +242,19 @@ const SampleAPI = (function () {
       const itemId = Number(adminItemMatch[1]);
       const idx = (store.items || []).findIndex((i) => i.id === itemId);
       if (idx < 0) fail(404, '존재하지 않는 상품입니다.');
+      const activeResCount = reservations.filter((r) => r.storeId === ADMIN_STORE_ID && r.itemId === itemId && (r.status === '예약 대기' || r.status === '예약 확정')).length;
       if (method === 'DELETE') {
+        const item = store.items[idx];
+        // 품절 상품만 삭제 가능, 진행 중(대기/확정) 예약이 있으면 삭제 불가
+        if (item.stock > 0) fail(400, '품절 상태의 상품만 삭제할 수 있습니다.');
+        if (activeResCount > 0) fail(409, '진행 중인 예약이 있어 상품을 삭제할 수 없습니다.');
         store.items.splice(idx, 1);
         write(KEY.stores, stores);
         return { ok: true };
       }
       if (method === 'PATCH') {
         const item = store.items[idx];
+        if (item.stock <= 0) fail(400, '품절 상품이라 수정할 수 없습니다.');
         const name = (body.name || '').trim();
         const priceNum = Number(body.price);
         const total = Math.floor(Number(body.total));

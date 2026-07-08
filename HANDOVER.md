@@ -48,7 +48,7 @@ saveBite/
    │  └─ UserMyPage/              # 마이페이지: 예약 내역/취소/길찾기
    └─ AdminPage/
       ├─ AdminLoginPage/          # 관리자 로그인 (기존 구현, 유지)
-      └─ AdminSigninPage/         # 관리자 회원가입 2단계 (기존 구현, 유지)
+      └─ AdminSigninPage/         # 관리자 회원가입 2단계 (Step2 가게정보/주소검색 구현 완료)
 ```
 
 각 페이지 폴더는 `이름.html` / `이름.css` / `이름.js` 세트로 구성.
@@ -114,8 +114,8 @@ const APP_CONFIG = {
 | GET | `/api/directions?origin=경도,위도&destination=경도,위도&mode=car\|walk` | **정규화 형식** `{path:[[경도,위도],...], distanceM, durationSec}` |
 | GET | `/api/admin/store` | (관리자) 내 가게 상세 — `items`에 `hidden` 포함 전체 반환 |
 | POST | `/api/admin/store/items` `{name,price,total}` | (관리자) 상품 추가. `stock=total`(예약 0)로 생성 |
-| PATCH | `/api/admin/store/items/:id` `{name,price,total}` | (관리자) 상품 수정. 기존 예약 수 유지(`stock = total - 예약수`), 예약수보다 적은 total 은 400 |
-| DELETE | `/api/admin/store/items/:id` | (관리자) 상품 삭제 (현재 UI 미노출, API만 유지) |
+| PATCH | `/api/admin/store/items/:id` `{name,price,total}` | (관리자) 상품 수정. **품절 상품은 400 차단**. 기존 예약 수 유지(`stock = total - 예약수`), 예약수보다 적은 total 은 400 |
+| DELETE | `/api/admin/store/items/:id` | (관리자) 상품 삭제. **품절 상품만 가능**(판매중 400), 진행 중(대기/확정) 예약 있으면 409 |
 | GET | `/api/admin/store/items/:id/reservations` | (관리자) 상품별 예약자 목록 `[{id,name,phone,pickupTime,status}]` (대기/확정만) |
 | POST | `/api/admin/store/items/:id/soldout` | (관리자) 긴급 품절: 재고 0 + 활성 예약 일괄 취소(`canceledBySoldOut` 플래그). `{ok,canceledCount}` 반환 |
 
@@ -142,8 +142,8 @@ const APP_CONFIG = {
 | 페이지 | 상태 | 비고 |
 |---|---|---|
 | 관리자 로그인 | ✅ 완료 | 시안과 일치. 성공 시 `AdminSession` 저장 후 대시보드로 이동. 고정 계정 `admin@test.com`/`admin1234!` 유지 |
-| 관리자 회원가입(2단계) | ✅ 기존 구현 | 계정정보 → 가게정보 스텝 |
-| **관리자 대시보드** | ✅ 완료 | 좌측 상품목록(뱃지/진행바) + 우측 통계 4개 + 지도. ⋮ 메뉴 = **예약자 확인**(이름/전화/시간 모달) · **수정** · **긴급 품절**(예약 N명 확인 모달 → 일괄 취소+품절) |
+| 관리자 회원가입(2단계) | ✅ 완료 | Step1 계정정보 + Step2 가게정보. **가게이름**(특수문자 `()[]-&`만 허용) + **주소검색**(다음/카카오 우편번호 팝업, 무료·무키) + **상세주소**(50자, 공백만 불가), 유효 시 버튼 활성화 |
+| **관리자 대시보드** | ✅ 완료 | 좌측 상품목록(뱃지/진행바) + 우측 통계 4개 + 지도. ⋮ 메뉴가 **상태별로 다름** → **판매중**: 예약자 확인·수정·긴급 품절 / **품절**: 예약자 확인·삭제(재확인 모달, 진행 중 예약 있으면 삭제 불가) |
 | **상품 추가/수정** | ✅ 완료 | 한 페이지 겸용. `?id=상품ID` 로 열면 **상품 수정** 모드(프리필, 가격 포맷 미리보기, `수정 완료` 버튼, PATCH). 없으면 추가 모드(POST) |
 
 > **관리자 데이터 방식 (검토 항목 결정됨)**: 관리자 페이지는 사용자와 **동일한 `config.js` + `sample-data.js`(SampleAPI)를 공유**합니다. 관리자↔가게 매핑은 `sample-data.js`의 `ADMIN_STORE_ID`(현재 `1` = GS25 강남테헤란점) 한 곳에서 관리. 따라서 관리자가 상품을 추가/삭제하면 **사용자 페이지에도 즉시 반영**됩니다. 관리자 세션은 사용자 세션과 분리된 `savebite_admin_session` 키(`AdminSession`)를 사용.
@@ -163,7 +163,7 @@ const APP_CONFIG = {
 
 ### 이번 단계 — 관리자 페이지 (Figma 시안 기준) ✅ 완료
 - [x] **관리자 대시보드** 신규 페이지 (`AdminPage/AdminDashboardPage/`)
-  - 좌측: 가게 헤더(가게명/주소/로그아웃), "내 상품" + `+추가` 버튼, 상품 카드(판매중/품절 뱃지, `예약 N` 뱃지, 가격, `예약 X/Y` 진행바, ⋮ 메뉴 = 숨기기/삭제)
+  - 좌측: 가게 헤더(가게명/주소/로그아웃), "내 상품" + `+추가` 버튼, 상품 카드(판매중/품절 뱃지, `예약 N` 뱃지, 가격, `예약 X/Y` 진행바, ⋮ 메뉴 = 상태별: 판매중=예약자확인/수정/긴급품절, 품절=예약자확인/삭제)
   - 우측: `대시보드` 헤더 + `영업 중` 표시, 통계 카드 4개(전체 상품/판매 중/품절/총 예약), 지도(가게 마커 + 정보 카드, 127.0.0.1:5500 에서 표시)
 - [x] **상품 추가** 신규 페이지 (`AdminPage/AdminProductAddPage/`)
   - 상품 이름(최대 30자, 글자수 카운터), 판매 가격(원), 예약 가능 수량(개), `상품 추가` 버튼(유효 시 활성화)
