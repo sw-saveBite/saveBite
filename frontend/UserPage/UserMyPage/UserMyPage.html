@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마이페이지 | 가게 예약 서비스</title>
+<link rel="stylesheet" href="UserMyPage.css">
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <h1>내 예약 내역</h1>
+    <a href="../UserMainPage/UserMainPage.html" class="map-btn">지도 가기</a>
+  </div>
+  <div id="listArea">
+    <p class="empty">불러오는 중...</p>
+  </div>
+</div>
+
+<!-- 예약 취소 모달 -->
+<div class="modal-overlay hidden" id="cancelModal">
+  <div class="modal">
+    <h3>예약 취소</h3>
+    <p>정말로 예약을 취소하시겠습니까?</p>
+    <div class="btns">
+      <button type="button" class="back" id="cancelBack">돌아가기</button>
+      <button type="button" class="danger" id="cancelConfirm">다시 한번 취소하기</button>
+    </div>
+  </div>
+</div>
+
+<script src="../sample-data.js"></script>
+<script src="../config.js"></script>
+<script src="UserMyPage.js"></script>
+</body>
+</html>

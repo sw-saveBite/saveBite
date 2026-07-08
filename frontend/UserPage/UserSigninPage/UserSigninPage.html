@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>사용자 회원가입 | 가게 예약 서비스</title>
+<link rel="stylesheet" href="UserSigninPage.css">
+</head>
+<body>
+<div class="page">
+  <a href="../UserLoginPage/UserLoginPage.html" class="back-top">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+    로그인으로 돌아가기
+  </a>
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+  </div>
+  <h1>사용자 회원가입</h1>
+  <p class="subtitle">계정을 만들고 주변 가게를 예약하세요</p>
+
+  <div class="card">
+    <div class="top-banner" id="topBanner"></div>
+
+    <div class="field">
+      <label for="email">이메일</label>
+      <div class="input-row">
+        <div class="input-wrap" id="emailWrap">
+          <svg class="icon-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+          <input type="text" id="email" placeholder="user@email.com" autocomplete="off">
+        </div>
+        <button type="button" class="dup-btn" id="dupBtn">중복 확인</button>
+      </div>
+      <div class="msg" id="emailMsg"></div>
+    </div>
+
+    <div class="field">
+      <label for="password">비밀번호</label>
+      <div class="input-wrap" id="pwWrap">
+        <svg class="icon-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <input type="password" id="password" placeholder="8자 이상, 2가지 이상 조합" autocomplete="new-password">
+        <button type="button" class="eye-btn" id="pwEye" aria-label="비밀번호 표시">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="msg" id="pwMsg"></div>
+    </div>
+
+    <div class="field">
+      <label for="password2">비밀번호 확인</label>
+      <div class="input-wrap" id="pw2Wrap">
+        <svg class="icon-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <input type="password" id="password2" placeholder="비밀번호 재입력" autocomplete="new-password">
+        <button type="button" class="eye-btn" id="pw2Eye" aria-label="비밀번호 표시">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="msg" id="pw2Msg"></div>
+    </div>
+
+    <div class="field">
+      <label for="phone">휴대폰 번호</label>
+      <div class="input-wrap" id="phoneWrap">
+        <svg class="icon-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        <input type="text" id="phone" placeholder="01012345678" inputmode="numeric" maxlength="11">
+      </div>
+      <div class="msg" id="phoneMsg"></div>
+    </div>
+
+    <button type="button" class="main-btn" id="signupBtn">회원가입 완료</button>
+
+    <div class="bottom-link">
+      이미 계정이 있으신가요?
+      <a href="../UserLoginPage/UserLoginPage.html">로그인</a>
+    </div>
+  </div>
+</div>
+
+<script src="../config.js"></script>
+<script src="UserSigninPage.js"></script>
+</body>
+</html>

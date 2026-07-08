@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "static-frontend",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "serve", "-l", "5500", "frontend"],
+      "port": 5500
+    },
+    {
+      "name": "static-frontend-verify",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["--yes", "serve", "frontend"],
+      "autoPort": true
+    }
+  ]
+}

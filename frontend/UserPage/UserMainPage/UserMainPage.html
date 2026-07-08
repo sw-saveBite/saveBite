@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>주변 가게 찾기 | 가게 예약 서비스</title>
+<link rel="stylesheet" href="UserMainPage.css">
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<!-- 카카오 지도 SDK 는 config.js 의 키로 UserMainPage.js 에서 동적으로 로드합니다 -->
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon"><i class="ph ph-map-pin"></i></div>
+      <div class="brand-text">
+        <h1>주변 가게 찾기</h1>
+        <p>현재 위치 기준 반경 3km</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <a href="../UserMyPage/UserMyPage.html" class="topbar-btn"><i class="ph ph-user"></i> 마이페이지</a>
+      <button type="button" class="icon-btn" id="logoutBtn" title="로그아웃"><i class="ph ph-sign-out"></i></button>
+    </div>
+  </header>
+
+  <div class="main-body">
+    <aside class="sidebar">
+      <div class="emergency hidden" id="emergency">
+        <span id="emergencyText"></span>
+        <i class="ph ph-x close" id="emergencyClose"></i>
+      </div>
+      <div class="list-area no-scrollbar" id="listArea"></div>
+    </aside>
+
+    <section class="map-area">
+      <div id="map"></div>
+      <div class="route-info hidden" id="routeInfo"></div>
+      <div class="map-error hidden" id="mapError">
+        <div class="ic"><i class="ph ph-warning-circle"></i></div>
+        <h3>지도 로드 실패</h3>
+        <p id="mapErrorText">지도를 불러오지 못했습니다. 새로고침을 시도해 주세요.</p>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><span class="dot open"></span> 영업 중</div>
+        <div class="legend-item"><span class="dot prep"></span> 준비 중</div>
+        <div class="legend-item"><span class="dot me"></span> 내 위치</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 예약 확인 모달 -->
+  <div class="modal-overlay hidden" id="reserveModal">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-ic"><i class="ph ph-calendar-check"></i></div>
+        <div>
+          <h3>예약 확인</h3>
+          <p class="modal-store" id="reserveStore"></p>
+        </div>
+      </div>
+      <div class="modal-product">
+        <p class="mp-name" id="reserveName"></p>
+        <p class="mp-price" id="reservePrice"></p>
+        <p class="mp-stock" id="reserveStock"></p>
+      </div>
+      <p class="modal-ask">정말로 이 상품을 예약하시겠습니까?</p>
+      <div class="modal-btns">
+        <button type="button" class="m-cancel" id="reserveCancel">취소</button>
+        <button type="button" class="m-confirm" id="reserveConfirm">예약하기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../sample-data.js"></script>
+<script src="../config.js"></script>
+<script src="UserMainPage.js"></script>
+</body>
+</html>

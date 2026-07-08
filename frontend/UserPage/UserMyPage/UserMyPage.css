@@ -1,0 +1,46 @@
+:root{
+  --bg:#f8f9fa;
+  --navy:#2a3a50;
+  --text:#212529;
+  --muted:#6c757d;
+  --placeholder:#adb5bd;
+  --border:#e9ecef;
+  --btn:#7a8a9e;
+  --btn-hover:#6c7a8b;
+  --danger:#e2483d;
+}
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Noto Sans KR',sans-serif;color:var(--text);background:var(--bg);min-height:100vh;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:700px;margin:0 auto;padding:40px 24px;}
+.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;}
+.head h1{font-size:20px;font-weight:700;margin:0;}
+.map-btn{font-size:13px;background:#fff;padding:10px 16px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.04);border:1px solid var(--border);font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;color:var(--text);}
+
+.empty{background:#fff;border-radius:16px;border:1px solid var(--border);padding:64px 0;text-align:center;font-size:14px;color:var(--placeholder);}
+
+.res-card{background:#fff;border-radius:16px;border:1px solid var(--border);padding:24px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,0.03);margin-bottom:16px;gap:16px;}
+.res-card .status{display:inline-block;padding:4px 10px;font-size:11px;font-weight:700;border-radius:6px;margin-bottom:10px;}
+.status.wait{background:#fef3e2;color:#d98a1f;}
+.status.confirm{background:#e7effb;color:#2f6fd0;}
+.status.cancel{background:#f1f3f5;color:#868e96;}
+.status.done{background:#e6f6ec;color:#1f8a4c;}
+.res-card h3{font-size:15px;font-weight:700;margin:0;}
+.res-card .date{font-size:12px;color:var(--placeholder);margin:4px 0 0;}
+.actions{display:flex;gap:8px;flex-shrink:0;}
+.actions button{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;}
+.route-btn{background:var(--btn);color:#fff;}
+.route-btn:hover{background:var(--btn-hover);}
+.cancel-btn{background:#fdeceb;color:var(--danger);}
+.cancel-btn:hover{background:#fbdedc;}
+.cancel-btn:disabled{background:#f1f3f5;color:var(--placeholder);cursor:not-allowed;}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:50;}
+.modal{background:#fff;border-radius:16px;padding:28px;width:320px;box-shadow:0 20px 40px rgba(0,0,0,0.2);}
+.modal h3{font-size:16px;font-weight:700;margin:0 0 8px;}
+.modal p{font-size:13px;color:var(--muted);margin:0 0 24px;}
+.modal .btns{display:flex;gap:8px;}
+.modal button{flex:1;padding:10px 0;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.modal .back{background:#f1f3f5;color:#495057;}
+.modal .danger{background:var(--danger);color:#fff;}
+.hidden{display:none !important;}

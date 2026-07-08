@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>상품 추가 | 가게 관리 시스템</title>
+<link rel="stylesheet" href="AdminProductAddPage.css">
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body>
+<div class="page">
+  <a href="../AdminDashboardPage/AdminDashboardPage.html" class="back-link"><i class="ph ph-arrow-left"></i> 상품 목록으로</a>
+
+  <div class="head">
+    <div class="head-ic" id="headIc"><i class="ph ph-plus"></i></div>
+    <div>
+      <h1 id="pageTitle">상품 추가</h1>
+      <p id="pageSub">새로운 상품을 등록하세요</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="top-error" id="topError"></div>
+
+    <div class="field">
+      <label for="name">상품 이름</label>
+      <div class="input-wrap" id="nameWrap">
+        <input type="text" id="name" placeholder="상품명 입력 (최대 30자)" maxlength="30" autocomplete="off">
+      </div>
+      <div class="counter"><span id="nameCount">0</span>/30</div>
+    </div>
+
+    <div class="field">
+      <label for="price">판매 가격</label>
+      <div class="input-wrap" id="priceWrap">
+        <input type="text" id="price" inputmode="numeric" placeholder="0" autocomplete="off">
+        <span class="suffix">원</span>
+      </div>
+      <div class="price-preview" id="pricePreview"></div>
+    </div>
+
+    <div class="field">
+      <label for="qty">예약 가능 수량</label>
+      <div class="input-wrap" id="qtyWrap">
+        <input type="text" id="qty" inputmode="numeric" placeholder="예) 20" autocomplete="off">
+        <span class="suffix">개</span>
+      </div>
+    </div>
+
+    <button type="button" class="main-btn" id="submitBtn">상품 추가</button>
+  </div>
+</div>
+
+<script src="../../UserPage/sample-data.js"></script>
+<script src="../../UserPage/config.js"></script>
+<script src="AdminProductAddPage.js"></script>
+</body>
+</html>

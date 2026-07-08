@@ -1,0 +1,190 @@
+:root{
+  --bg:#eef1f5;
+  --card:#ffffff;
+  --navy:#1e2a44;
+  --navy-deep:#16203a;
+  --text:#1f2530;
+  --muted:#8a93a3;
+  --input-bg:#f4f5f7;
+  --input-border:#e3e6ea;
+  --input-border-focus:#1e2a44;
+  --btn-disabled:#a7afc0;
+  --btn-active:#1e2a44;
+  --danger:#e2483d;
+  --success:#1f8a4c;
+  --success-bg:#eaf7ee;
+  --danger-bg:#fdeceb;
+  --ring: rgba(30,42,68,0.12);
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  min-height:100vh;
+  background:var(--bg);
+  font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:40px 16px;
+}
+.page{
+  width:100%;
+  max-width:428px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+.logo{
+  width:88px;
+  height:88px;
+  border-radius:26px;
+  background:var(--navy);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 10px 24px rgba(30,42,68,0.25);
+  margin-bottom:22px;
+}
+.logo svg{width:44px;height:44px;}
+h1{
+  font-size:26px;
+  font-weight:800;
+  margin:0 0 8px;
+  text-align:center;
+  letter-spacing:-0.5px;
+}
+.subtitle{
+  color:var(--muted);
+  font-size:15px;
+  margin:0 0 28px;
+  text-align:center;
+}
+.card{
+  width:100%;
+  background:var(--card);
+  border-radius:26px;
+  padding:38px 34px 30px;
+  box-shadow:0 8px 30px rgba(30,42,68,0.06);
+}
+
+.top-error, .top-success{
+  font-size:13px;
+  font-weight:700;
+  border-radius:12px;
+  padding:11px 14px;
+  margin-bottom:16px;
+  display:none;
+}
+.top-error{color:var(--danger);background:var(--danger-bg);border:1px solid #f6c9c5;}
+.top-error.show{display:block;}
+.top-success{color:var(--success);background:var(--success-bg);border:1px solid #b9e3c6;}
+.top-success.show{display:block;}
+
+.field{margin-bottom:20px;}
+label{
+  display:block;
+  font-size:14px;
+  font-weight:700;
+  margin-bottom:10px;
+}
+.input-wrap{
+  position:relative;
+  display:flex;
+  align-items:center;
+  background:var(--input-bg);
+  border:1.5px solid var(--input-border);
+  border-radius:14px;
+  padding:0 16px;
+  transition:border-color .2s ease, box-shadow .2s ease;
+}
+.input-wrap:focus-within{
+  border-color:var(--input-border-focus);
+  box-shadow:0 0 0 4px var(--ring);
+  background:#fff;
+}
+.input-wrap.error{border-color:var(--danger);}
+.input-wrap.valid{border-color:var(--success);}
+.input-wrap svg.icon-left{width:18px;height:18px;color:var(--muted);flex-shrink:0;margin-right:10px;}
+input{
+  border:none;
+  background:transparent;
+  outline:none;
+  width:100%;
+  font-size:15px;
+  padding:14px 0;
+  color:var(--text);
+  font-family:inherit;
+}
+input::placeholder{color:#adb4c0;}
+.eye-btn{
+  background:none;border:none;cursor:pointer;color:var(--muted);
+  display:flex;align-items:center;padding:4px;flex-shrink:0;
+}
+.eye-btn svg{width:19px;height:19px;}
+
+.msg{
+  font-size:12.5px;
+  margin-top:8px;
+  min-height:16px;
+  font-weight:600;
+}
+.msg.error{color:var(--danger);}
+.msg.success{color:var(--success);}
+
+.main-btn{
+  width:100%;
+  padding:16px 0;
+  border:none;
+  border-radius:16px;
+  font-size:16px;
+  font-weight:800;
+  color:#fff;
+  background:var(--btn-disabled);
+  cursor:not-allowed;
+  margin-top:6px;
+  transition:background .2s ease, transform .1s ease;
+  font-family:inherit;
+}
+.main-btn.enabled{background:var(--btn-active);cursor:pointer;}
+.main-btn.enabled:hover{background:var(--navy-deep);}
+.main-btn.enabled:active{transform:scale(0.995);}
+
+.bottom-link{
+  text-align:center;
+  font-size:14px;
+  color:var(--muted);
+  margin-top:22px;
+}
+.bottom-link a{
+  color:var(--navy);
+  font-weight:800;
+  text-decoration:none;
+  margin-left:4px;
+}
+.bottom-link a:hover{text-decoration:underline;}
+
+.divider{
+  border:none;
+  border-top:1px solid var(--input-border);
+  margin:22px 0 16px;
+}
+.hint-text{
+  text-align:center;
+  font-size:13px;
+  color:var(--muted);
+  margin:0 0 12px;
+}
+.user-page-link{
+  display:block;
+  text-align:center;
+  font-size:14px;
+  color:var(--text);
+  font-weight:600;
+  text-decoration:none;
+}
+.user-page-link:hover{color:var(--navy);}
+
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important;}
+}

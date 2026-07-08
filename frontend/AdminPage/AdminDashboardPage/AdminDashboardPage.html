@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리자 대시보드 | 가게 관리 시스템</title>
+<link rel="stylesheet" href="AdminDashboardPage.css">
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<!-- 카카오 지도 SDK 는 config.js 의 키로 JS 에서 동적으로 로드합니다 -->
+</head>
+<body>
+<div class="admin">
+  <!-- 좌측: 가게 헤더 + 내 상품 목록 -->
+  <aside class="sidebar">
+    <div class="store-head">
+      <div class="store-ic"><i class="ph ph-storefront"></i></div>
+      <div class="store-meta">
+        <h2 id="storeName">가게</h2>
+        <p id="storeAddress"></p>
+      </div>
+      <button type="button" class="logout-btn" id="logoutBtn" title="로그아웃"><i class="ph ph-sign-out"></i></button>
+    </div>
+
+    <div class="products-head">
+      <span class="ph-title">내 상품</span>
+      <a href="../AdminProductAddPage/AdminProductAddPage.html" class="add-btn"><i class="ph ph-plus"></i> 추가</a>
+    </div>
+
+    <div class="products no-scrollbar" id="productList"></div>
+  </aside>
+
+  <!-- 우측: 대시보드 통계 + 지도 -->
+  <main class="content">
+    <header class="content-head">
+      <div>
+        <h1>대시보드</h1>
+        <p>가게 현황 및 위치 관리</p>
+      </div>
+      <div class="open-flag" id="openFlag"><span class="dot"></span> <span id="openText">영업 중</span></div>
+    </header>
+
+    <section class="stats">
+      <div class="stat neutral"><b id="statTotal">0</b><span>전체 상품</span></div>
+      <div class="stat green"><b id="statOnSale">0</b><span>판매 중</span></div>
+      <div class="stat red"><b id="statSoldOut">0</b><span>품절</span></div>
+      <div class="stat blue"><b id="statReserved">0</b><span>총 예약</span></div>
+    </section>
+
+    <section class="map-wrap">
+      <div id="map"></div>
+      <div class="map-card hidden" id="mapCard">
+        <b id="mapCardName"></b>
+        <p><i class="ph ph-map-pin"></i> <span id="mapCardAddress"></span></p>
+      </div>
+      <div class="map-fallback hidden" id="mapFallback">
+        <i class="ph ph-map-trifold"></i>
+        <p>지도 API 연동 영역 (Kakao Maps)</p>
+        <small id="mapFallbackText"></small>
+      </div>
+    </section>
+  </main>
+
+  <!-- 예약자 확인 모달 -->
+  <div class="modal-overlay hidden" id="reserversModal">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-ic"><i class="ph ph-users"></i></div>
+        <div class="modal-titles">
+          <h3>예약자 확인</h3>
+          <p id="reserversItemName"></p>
+        </div>
+        <button type="button" class="modal-close" id="reserversClose"><i class="ph ph-x"></i></button>
+      </div>
+      <div class="reserver-list no-scrollbar" id="reserverList"></div>
+    </div>
+  </div>
+
+  <!-- 긴급 품절 처리 모달 -->
+  <div class="modal-overlay hidden" id="soldoutModal">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-ic warn"><i class="ph ph-warning"></i></div>
+        <div class="modal-titles">
+          <h3>긴급 품절 처리</h3>
+          <p id="soldoutItemName"></p>
+        </div>
+      </div>
+      <p class="soldout-text" id="soldoutText"></p>
+      <div class="modal-btns">
+        <button type="button" class="m-cancel" id="soldoutCancel">취소</button>
+        <button type="button" class="m-warn" id="soldoutConfirm">품절 처리</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../../UserPage/sample-data.js"></script>
+<script src="../../UserPage/config.js"></script>
+<script src="AdminDashboardPage.js"></script>
+</body>
+</html>
