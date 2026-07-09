@@ -146,6 +146,53 @@ const toArray = (value) => {
   return [value];
 };
 
+const getKakaoAddress = async (address) => {
+  if (!address) return null;
+
+  const url = new URL("https://dapi.kakao.com/v2/local/search/address.json");
+  url.searchParams.set("query", address);
+
+  const data = await requestJson(url, {
+    headers: {
+      Authorization: `KakaoAK ${env.kakaoRestApiKey}`,
+    },
+  });
+
+  return data.documents?.[0] || null;
+};
+
+const searchKakaoStores = async (keyword, page, size) => {
+  requireApiKey(env.kakaoRestApiKey, "Kakao 로컬");
+
+  const url = new URL("https://dapi.kakao.com/v2/local/search/keyword.json");
+  url.searchParams.set("query", keyword);
+  url.searchParams.set("page", page);
+  url.searchParams.set("size", Math.min(Number(size) || 10, 15));
+
+  const data = await requestJson(url, {
+    headers: {
+      Authorization: `KakaoAK ${env.kakaoRestApiKey}`,
+    },
+  });
+
+  return Promise.all((data.documents || []).map(async (item) => {
+    const roadAddress = item.road_address_name || "";
+    const addressData = await getKakaoAddress(roadAddress || item.address_name).catch(() => null);
+
+    return {
+      business_id: item.id,
+      store_name: item.place_name,
+      category: item.category_name || "",
+      zip_code: addressData?.road_address?.zone_no || "",
+      road_address: roadAddress,
+      lot_address: item.address_name || "",
+      latitude: item.y ? Number(item.y) : null,
+      longitude: item.x ? Number(item.x) : null,
+      raw: item,
+    };
+  }));
+};
+
 export const searchCommercialStores = async ({ keyword, pageNo = 1, numOfRows = 10 }) => {
   const searchKeyword = String(keyword || "").trim();
 
@@ -153,29 +200,34 @@ export const searchCommercialStores = async ({ keyword, pageNo = 1, numOfRows = 
     throw new ApiError(400, "상호명을 입력해 주세요.");
   }
 
-  const data = await callSmallBusinessApi("storeList", {
-    divId: "bizesNm",
-    key: searchKeyword,
-    pageNo,
-    numOfRows,
-  });
+  try {
+    const data = await callSmallBusinessApi("storeList", {
+      divId: "bizesNm",
+      key: searchKeyword,
+      pageNo,
+      numOfRows,
+    });
 
-  const items = toArray(
-    data?.body?.items?.item
-      || data?.body?.items
-      || data?.response?.body?.items?.item
-      || data?.response?.body?.items,
-  );
+    const items = toArray(
+      data?.body?.items?.item
+        || data?.body?.items
+        || data?.response?.body?.items?.item
+        || data?.response?.body?.items,
+    );
 
-  return items.map((item) => ({
-    business_id: item.bizesId,
-    store_name: item.bizesNm,
-    category: item.indsSclsNm || item.indsMclsNm || item.indsLclsNm || "",
-    zip_code: item.newZipcd || item.zipcd || "",
-    road_address: item.rdnmAdr || "",
-    lot_address: item.lnoAdr || "",
-    latitude: item.lat ? Number(item.lat) : null,
-    longitude: item.lon ? Number(item.lon) : null,
-    raw: item,
-  }));
+    return items.map((item) => ({
+      business_id: item.bizesId,
+      store_name: item.bizesNm,
+      category: item.indsSclsNm || item.indsMclsNm || item.indsLclsNm || "",
+      zip_code: item.newZipcd || item.zipcd || "",
+      road_address: item.rdnmAdr || "",
+      lot_address: item.lnoAdr || "",
+      latitude: item.lat ? Number(item.lat) : null,
+      longitude: item.lon ? Number(item.lon) : null,
+      raw: item,
+    }));
+  } catch (error) {
+    if (!env.kakaoRestApiKey) throw error;
+    return searchKakaoStores(searchKeyword, pageNo, numOfRows);
+  }
 };

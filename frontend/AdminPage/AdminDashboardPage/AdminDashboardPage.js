@@ -31,10 +31,7 @@
   let openMenuId = null;
   let soldoutTarget = null;
   let deleteTarget = null;
-<<<<<<< HEAD
-=======
   const ACTIVE_RESERVATION_STATUSES = ['예약대기', '예약확정', '준비중', '준비완료'];
->>>>>>> 8ee0774 (complete)
 
   // ---------- 초기화 ----------
   async function init() {
@@ -120,17 +117,6 @@
       ${soldOut ? '<button data-act="delete" class="danger"><i class="ph ph-trash"></i> 삭제</button>' : '<button data-act="soldout" class="warn"><i class="ph ph-warning"></i> 긴급 품절</button>'}`;
     card.appendChild(pop);
     pop.querySelector('[data-act="reservers"]').addEventListener('click', (e) => { e.stopPropagation(); openReservers(item); });
-<<<<<<< HEAD
-    const editBtn = pop.querySelector('[data-act="edit"]');
-    if (editBtn) editBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      window.location.href = `../AdminProductAddPage/AdminProductAddPage.html?id=${item.id}`;
-    });
-    const soldoutBtn = pop.querySelector('[data-act="soldout"]');
-    if (soldoutBtn) soldoutBtn.addEventListener('click', (e) => { e.stopPropagation(); openSoldout(item); });
-    const deleteBtn = pop.querySelector('[data-act="delete"]');
-    if (deleteBtn) deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); openDelete(item); });
-=======
     const editButton = pop.querySelector('[data-act="edit"]');
     if (editButton) {
       editButton.addEventListener('click', (e) => {
@@ -146,7 +132,6 @@
     if (deleteButton) {
       deleteButton.addEventListener('click', (e) => { e.stopPropagation(); openDelete(item); });
     }
->>>>>>> 8ee0774 (complete)
   }
 
   function closeMenu() {
@@ -207,16 +192,11 @@
     if (!soldoutTarget) return;
     soldoutConfirm.disabled = true;
     try {
-<<<<<<< HEAD
-      await apiFetch(`/api/admin/store/items/${soldoutTarget.id}/soldout`, { method: 'POST' });
-      alert('긴급 품절 처리되었으며, 예약자에게 취소 안내가 발송되었습니다.');
-=======
       await apiFetch(`/api/admin/products/${soldoutTarget.id}/emergency-soldout`, {
         method: 'PATCH',
         body: JSON.stringify({ cancel_reason: '관리자 긴급 품절 처리' })
       });
       alert('긴급 품절 처리되었습니다.');
->>>>>>> 8ee0774 (complete)
       closeSoldout();
       await refresh();
     } catch (e) {
@@ -225,11 +205,7 @@
     }
   });
 
-<<<<<<< HEAD
-  // ---------- 상품 삭제 모달 (품절 상품만) ----------
-=======
   // ---------- 품절 상품 삭제 ----------
->>>>>>> 8ee0774 (complete)
   function openDelete(item) {
     closeMenu();
     deleteTarget = item;
@@ -247,16 +223,6 @@
     if (!deleteTarget) return;
     deleteConfirm.disabled = true;
     try {
-<<<<<<< HEAD
-      await apiFetch(`/api/admin/store/items/${deleteTarget.id}`, { method: 'DELETE' });
-      alert('상품이 삭제되었습니다.');
-      closeDelete();
-      await refresh();
-    } catch (e) {
-      // 예약 존재/판매중 등 삭제 불가 사유 안내
-      alert(e.message || '상품 삭제 중 오류가 발생했습니다.');
-      closeDelete();
-=======
       await apiFetch(`/api/admin/products/${deleteTarget.id}`, { method: 'DELETE' });
       alert('상품이 리스트에서 삭제되었습니다.');
       closeDelete();
@@ -264,7 +230,6 @@
     } catch (e) {
       alert(e.message || '상품 삭제 중 오류가 발생했습니다.');
       deleteConfirm.disabled = false;
->>>>>>> 8ee0774 (complete)
     }
   });
 

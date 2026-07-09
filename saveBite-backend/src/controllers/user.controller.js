@@ -4,6 +4,71 @@ import { getDistanceKm } from "../utils/distance.js";
 import { isBlank } from "../utils/validation.js";
 
 const CANCELLABLE_STATUSES = ["예약대기", "예약확정"];
+const RESERVATION_RETRY_LIMIT = 5;
+
+const reserveProductSlot = async (productId) => {
+  for (let attempt = 0; attempt < RESERVATION_RETRY_LIMIT; attempt += 1) {
+    const { data: product, error: productError } = await supabase
+      .from("product")
+      .select("*")
+      .eq("product_id", productId)
+      .maybeSingle();
+
+    if (productError) {
+      throw productError;
+    }
+
+    const currentQuantity = Number(product?.count_quantity);
+    const totalQuantity = Number(product?.quantity);
+
+    if (
+      !product
+      || product.status === "품절"
+      || !Number.isFinite(currentQuantity)
+      || !Number.isFinite(totalQuantity)
+      || currentQuantity >= totalQuantity
+    ) {
+      throw new ApiError(409, "이 상품은 예약이 마감되었습니다.");
+    }
+
+    const nextCountQuantity = currentQuantity + 1;
+    const { data: updatedProduct, error: updateError } = await supabase
+      .from("product")
+      .update({
+        count_quantity: nextCountQuantity,
+        status: nextCountQuantity >= totalQuantity ? "품절" : product.status,
+      })
+      .eq("product_id", product.product_id)
+      .eq("count_quantity", currentQuantity)
+      .select("*")
+      .maybeSingle();
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    if (updatedProduct) {
+      return {
+        product: updatedProduct,
+        previousCountQuantity: currentQuantity,
+        previousStatus: product.status,
+      };
+    }
+  }
+
+  throw new ApiError(409, "다른 사용자가 예약 중입니다. 잠시 후 다시 시도해 주세요.");
+};
+
+const releaseProductSlot = async ({ product, previousCountQuantity, previousStatus }) => {
+  await supabase
+    .from("product")
+    .update({
+      count_quantity: previousCountQuantity,
+      status: previousStatus,
+    })
+    .eq("product_id", product.product_id)
+    .eq("count_quantity", Number(product.count_quantity));
+};
 
 export const getNearbyStores = async (req, res) => {
   const latitude = Number(req.query.latitude);
@@ -69,44 +134,19 @@ export const createReservation = async (req, res) => {
     throw new ApiError(400, "상품을 선택해 주세요.");
   }
 
-  const { data: product, error: productError } = await supabase
-    .from("product")
-    .select("*")
-    .eq("product_id", product_id)
-    .maybeSingle();
-
-  if (productError) {
-    throw productError;
-  }
-
-  if (!product || product.status === "품절" || Number(product.count_quantity) >= Number(product.quantity)) {
-    throw new ApiError(400, "이 상품은 예약이 마감되었습니다.");
-  }
-
-  const nextCountQuantity = Number(product.count_quantity) + 1;
+  const reservedSlot = await reserveProductSlot(product_id);
 
   const { error: reservationError } = await supabase.from("reservation").insert({
     user_id: req.auth.id,
-    product_id: product.product_id,
+    product_id: reservedSlot.product.product_id,
     status: "예약확정",
     cancle_reason: "",
     create_at: new Date().toISOString(),
   });
 
   if (reservationError) {
+    await releaseProductSlot(reservedSlot);
     throw reservationError;
-  }
-
-  const { error: productUpdateError } = await supabase
-    .from("product")
-    .update({
-      count_quantity: nextCountQuantity,
-      status: nextCountQuantity >= Number(product.quantity) ? "품절" : product.status,
-    })
-    .eq("product_id", product.product_id);
-
-  if (productUpdateError) {
-    throw productUpdateError;
   }
 
   res.status(201).json({
