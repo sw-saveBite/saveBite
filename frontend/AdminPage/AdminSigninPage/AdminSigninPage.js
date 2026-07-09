@@ -62,6 +62,33 @@
   function hasWhitespace(str){ return /\s/.test(str); }
   function setMsg(el, text, type){ el.textContent = text || ''; el.className = 'msg' + (type ? ' ' + type : ''); }
   function setWrapState(wrap, state){ wrap.classList.remove('error','valid'); if(state) wrap.classList.add(state); }
+  function setButtonEnabled(button, enabled){
+    button.disabled = !enabled;
+    button.classList.toggle('enabled', enabled);
+  }
+
+  function updateNextButton(){
+    const enabled = emailValid()
+      && pwValidBase()
+      && pw2Input.value === pwInput.value
+      && /^[0-9]{9,11}$/.test(phoneInput.value);
+    setButtonEnabled(nextBtn, enabled);
+  }
+
+  function updateSignupButton(){
+    const hasCoordinates = selectedStore
+      && Number.isFinite(Number(selectedStore.latitude))
+      && Number.isFinite(Number(selectedStore.longitude));
+    const enabled = businessChecked
+      && selectedStore
+      && storeNameInput.value.trim()
+      && zipCodeInput.value.trim()
+      && roadAddressInput.value.trim()
+      && detailAddressInput.value.trim()
+      && detailAddressInput.value.length <= 50
+      && hasCoordinates;
+    setButtonEnabled(signupBtn, Boolean(enabled));
+  }
 
   // ---------- EMAIL ----------
   function resetDupCheck(){
@@ -76,6 +103,7 @@
     setWrapState(emailWrap, '');
     setMsg(emailMsg, '');
     hideTopError();
+    updateNextButton();
   });
 
   dupBtn.addEventListener('click', async function(){
@@ -111,13 +139,15 @@
       setWrapState(emailWrap, 'valid');
       dupBtn.textContent = '확인완료';
       dupBtn.classList.add('checked');
+      updateNextButton();
     } catch (err) {
-      emailChecked = true;
+      emailChecked = false;
       emailIsDuplicate = err.status === 409;
       setMsg(emailMsg, err.message || '이메일 중복 확인에 실패했습니다.', 'error');
       setWrapState(emailWrap, 'error');
       dupBtn.textContent = '중복 확인';
       dupBtn.classList.remove('checked');
+      updateNextButton();
     } finally {
       dupBtn.disabled = false;
     }
@@ -196,8 +226,9 @@
     validatePassword(true);
     if(pw2Input.value.length>0) validatePassword2(true);
     hideTopError();
+    updateNextButton();
   });
-  pw2Input.addEventListener('input', function(){ validatePassword2(true); hideTopError(); });
+  pw2Input.addEventListener('input', function(){ validatePassword2(true); hideTopError(); updateNextButton(); });
 
   document.getElementById('pwEye').addEventListener('click', function(){
     pwInput.type = pwInput.type === 'password' ? 'text' : 'password';
@@ -212,6 +243,7 @@
     setMsg(phoneMsg, '');
     setWrapState(phoneWrap, '');
     hideTopError();
+    updateNextButton();
   });
 
   function validatePhone(showMsg){
@@ -278,6 +310,7 @@
     storeError.classList.remove('show');
     businessCheckBtn.textContent = '인증';
     businessCheckBtn.classList.remove('checked');
+    updateSignupButton();
   });
 
   businessCheckBtn.addEventListener('click', async function(){
@@ -305,12 +338,14 @@
       storeNameInput.disabled = false;
       storeSearchBtn.disabled = false;
       storeNameInput.focus();
+      updateSignupButton();
     } catch (err) {
       businessChecked = false;
       setMsg(businessMsg, err.message || '사업자등록번호 인증에 실패했습니다.', 'error');
       setWrapState(businessWrap, 'error');
       businessCheckBtn.textContent = '인증';
       businessCheckBtn.classList.remove('checked');
+      updateSignupButton();
     } finally {
       businessCheckBtn.disabled = false;
     }
@@ -327,6 +362,7 @@
     setMsg(storeNameMsg, '');
     setWrapState(storeNameWrap, '');
     storeError.classList.remove('show');
+    updateSignupButton();
   });
 
   storeSearchBtn.addEventListener('click', async function(){
@@ -389,7 +425,14 @@
       </dl>
     </div>`;
     storeResult.classList.add('show');
+    updateSignupButton();
   }
+
+  zipCodeInput.addEventListener('input', updateSignupButton);
+  detailAddressInput.addEventListener('input', function(){
+    storeError.classList.remove('show');
+    updateSignupButton();
+  });
 
   async function searchStores(keyword){
     try {
@@ -524,8 +567,8 @@
     } catch (err) {
       storeError.textContent = err.message || '회원가입에 실패했습니다.';
       storeError.classList.add('show');
-      signupBtn.disabled = false;
       signupBtn.textContent = '회원가입 완료';
+      updateSignupButton();
     }
   });
 
@@ -539,5 +582,8 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
+
+  updateNextButton();
+  updateSignupButton();
 
 })();
